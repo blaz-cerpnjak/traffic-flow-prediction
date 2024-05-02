@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "traffic-flow-prediction"
+version = "0.1.0"
+description = "ML project for predicting traffic flow"
+authors = ["blaz-cerpnjak <blaz003cerpnjak@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+selenium = "^4.20.0"
+pandas = "^2.2.2"
+requests = "^2.31.0"
+dvc = "^3.50.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
