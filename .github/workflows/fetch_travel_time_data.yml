@@ -7,7 +7,6 @@ on:
 
 jobs:
   fetch_raw_mbajk_data:
-    needs: test
     runs-on: ubuntu-latest
 
     outputs:
