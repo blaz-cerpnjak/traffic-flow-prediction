@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.options import Options
 import re
 import os
 import csv
@@ -81,8 +82,13 @@ def scrape():
     Returns scraped travel times
     """
     datetime_utc = datetime.now(timezone.utc)
-    driver = webdriver.Chrome()
+    
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')
+
+    driver = webdriver.Chrome(options=chrome_options)
     driver.get(URL)
+
     wait = WebDriverWait(driver, 20)
 
     # Wait for the page to load
