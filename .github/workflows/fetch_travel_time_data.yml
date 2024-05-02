@@ -38,7 +38,7 @@ jobs:
         run: dvc pull
 
       - name: Scrape travel times
-        run: python src/data/scrapers/traffic_time_scraper.py
+        run: python src/data/scrapers/travel_time_scraper.py
 
       - name: Fetch weather data
         run: python src/data/weather/fetch_weather_data.py
