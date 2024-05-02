@@ -63,6 +63,7 @@ if __name__ == "__main__":
     for subdir, _, files in os.walk('data/travel_times/raw/'):
         for _ in files:
             location_name = os.path.split(subdir)[-1]
+            print(f"Fetching weather data for {location_name}...")
             df = pd.read_csv(f'data/travel_times/raw/{location_name}/travel_time_data.csv')
             last_row = df.iloc[-1]
             fetch_weather_data(pd.to_datetime(last_row['datetime']), last_row['latitude'], last_row['longitude'], location_name)
