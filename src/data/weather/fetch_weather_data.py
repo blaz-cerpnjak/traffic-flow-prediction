@@ -60,10 +60,11 @@ def fetch_weather_data(datetime, latitude, longitude, location_name):
     return
 
 if __name__ == "__main__":
-    for subdir, _, files in os.walk('data/travel_times/raw/'):
-        for _ in files:
-            location_name = os.path.split(subdir)[-1]
-            print(f"Fetching weather data for {location_name}...")
-            df = pd.read_csv(f'data/travel_times/raw/{location_name}/travel_time_data.csv')
-            last_row = df.iloc[-1]
-            fetch_weather_data(pd.to_datetime(last_row['datetime']), last_row['latitude'], last_row['longitude'], location_name)
+    base_dir = 'data/travel_times/raw'
+    location_names = [folder for folder in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, folder))]
+    
+    for location_name in location_names:
+        print(f"Fetching weather data for {location_name}...")
+        df = pd.read_csv(f'{base_dir}/{location_name}/travel_time_data.csv')
+        last_row = df.iloc[-1]
+        fetch_weather_data(pd.to_datetime(last_row['datetime']), last_row['latitude'], last_row['longitude'], location_name)
