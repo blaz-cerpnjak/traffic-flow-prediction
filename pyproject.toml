@@ -10,7 +10,7 @@ python = "^3.11"
 selenium = "^4.20.0"
 pandas = "^2.2.2"
 requests = "^2.31.0"
-dvc = "^3.50.1"
+dvc = {extras = ["s3"], version = "^3.50.1"}
 
 
 [build-system]
