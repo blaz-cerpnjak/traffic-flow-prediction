@@ -1,4 +1,5 @@
 import requests
+import sys
 import os
 import csv
 import pandas as pd
@@ -13,29 +14,27 @@ def get_item_by_hour(json_data, date_formatted, name, target_hour):
     index = times.index(target_hour_iso)
     return json_data['hourly'][name][index]
 
-def save_weather_data_to_csv(datetime, latitude, longitude, location_name, weather_data):
-    path = f"data/travel_times/raw/{location_name}"
-
+def save_weather_data_to_csv(datetime, latitude, longitude, path, weather_data):
     if not os.path.exists(path):
         os.makedirs(path)
 
-    csv_file_path = path + "/weather_data.csv"
+    csv_file_path = f"{path}/data.csv"
     csv_exists = os.path.exists(csv_file_path)
 
     with open(csv_file_path, mode='a', newline='') as file:
         writer = csv.writer(file)
         
         if not csv_exists:
-            writer.writerow(["datetime", "location_name", "latitude", "longitude", "temperature",
+            writer.writerow(["datetime", "latitude", "longitude", "temperature",
                              "relative_humidity", "dew_point", "precipitation", "precipitation_probability", "rain",
                              "surface_pressure", "apparent_temperature"])
             
-        writer.writerow([datetime, location_name, latitude, longitude, weather_data['temperature'],
+        writer.writerow([datetime, latitude, longitude, weather_data['temperature'],
                          weather_data['relative_humidity'], weather_data['dew_point'], weather_data['precipitation'],
                          weather_data['precipitation_probability'], weather_data['rain'],
                          weather_data['surface_pressure'], weather_data['apparent_temperature']])
 
-def fetch_weather_data(datetime, latitude, longitude, location_name):
+def fetch_weather_data(datetime, latitude, longitude, path):
     """
     Fetches weather data for a specific datetime and location
     """
@@ -56,15 +55,41 @@ def fetch_weather_data(datetime, latitude, longitude, location_name):
     data["surface_pressure"] = get_item_by_hour(json_data, date_formatted, 'surface_pressure', time.hour)
     data["apparent_temperature"] = get_item_by_hour(json_data, date_formatted, 'apparent_temperature', time.hour)
     
-    save_weather_data_to_csv(datetime, latitude, longitude, location_name, data)
+    save_weather_data_to_csv(datetime, latitude, longitude, path, data)
     return
 
 if __name__ == "__main__":
-    base_dir = 'data/travel_times/raw'
-    location_names = [folder for folder in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, folder))]
     
-    for location_name in location_names:
-        print(f"Fetching weather data for {location_name}...")
-        df = pd.read_csv(f'{base_dir}/{location_name}/travel_time_data.csv')
-        last_row = df.iloc[-1]
-        fetch_weather_data(pd.to_datetime(last_row['datetime']), last_row['latitude'], last_row['longitude'], location_name)
+    type = sys.argv[1]
+
+    if type == "travel-times":
+        base_dir = 'data/travel_times/raw'
+        location_names = [folder for folder in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, folder))]
+        
+        for location_name in location_names:
+            print(f"Fetching weather data for {location_name}...")
+
+            path = f"data/travel_times/raw/{location_name}" 
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+            df = pd.read_csv(f'{base_dir}/{location_name}/travel_time_data.csv')
+            last_row = df.iloc[-1]
+            fetch_weather_data(pd.to_datetime(last_row['datetime']), last_row['latitude'], last_row['longitude'], path)
+    
+    elif type == "vehicle-counters":
+        base_dir = 'data/vehicle_counters/raw'
+
+        for dirpath, dirnames, filenames in os.walk(base_dir):
+            if dirpath == base_dir:
+                continue
+
+            for dirname in dirnames:
+                path = f"{dirpath}/{dirname}"
+                if not os.path.exists(path):
+                    os.makedirs(path)
+
+                df = pd.read_csv(f'{path}/counters_data.csv')
+                last_row = df.iloc[-1]
+                print(last_row)
+                fetch_weather_data(pd.to_datetime(last_row['datetime']), last_row['latitude'], last_row['longitude'], path)

@@ -15,6 +15,27 @@ LOCATIONS = {
     "KP_LJ": Location(45.547986, 13.730478),
 }
 
+HIGHWAY_LOCATIONS_COORDINATES = {
+    "malecnik_ac": Location(46.5557564, 15.6981626),
+    "ptujska_ac": Location(46.4994856, 15.678947),
+    "hoce_ac": Location(46.500798, 15.6628986),
+    "preloge_ac": Location(46.3660994, 15.5012708),
+    "pletovarje_ac": Location(46.286597, 15.4227163),
+    "gotovlje_ac": Location(46.2589978, 15.1554611),
+    "lopata_ac": Location(45.7829672, 14.9012091),
+    "vransko_ac": Location(46.2432712, 14.9502677),
+    "jasovnik_ac": Location(46.2120134, 14.8992972),
+    "psata_ac": Location(46.0993913, 14.6010713),
+    "lj_vch_obvoznica": Location(46.0500268, 14.5069289),
+    "drenov_gric_ac": Location(45.9963943, 14.3284194),
+    "verd_ac": Location(45.9546421, 14.3011108),
+    "ravbarkomanda_ac": Location(45.7846181, 14.2224807),
+    "cebulovica_ac": Location(45.705303, 13.9909601),
+    "laze_ac": Location(45.7352111, 14.0690637),
+    "dekani_ac": Location(45.5483275, 13.8103444),
+    "bertoki_hc": Location(45.5453198, 13.7665528),
+}
+
 HIGHWAY_LOCATIONS = {
     "malecnik_ac": {
         "direction_mb": "Malečnik AC : MB",

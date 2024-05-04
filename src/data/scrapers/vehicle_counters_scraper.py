@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
-from locations import HIGHWAY_LOCATIONS
+from locations import HIGHWAY_LOCATIONS, HIGHWAY_LOCATIONS_COORDINATES
 
 URL = "https://promet.si/sl/stevci-prometa"
 CONTAINER_ID = "stevci-detail-container-34"
@@ -33,15 +33,15 @@ def append_csv_row(location_name, direction, row):
         writer = csv.writer(file)
         
         if not csv_exists:
-            writer.writerow(["datetime", "location_name", "number_of_vehicles_right_lane", "number_of_vehicles_left_lane",
+            writer.writerow(["datetime", "latitude", "longitude", "location_name", "number_of_vehicles_right_lane", "number_of_vehicles_left_lane",
                              "speed_right_lane", "speed_left_lane", "spacing_in_sec_right_lane", "spacing_in_sec_left_lane",
                              "density_type_right_lane", "density_type_left_lane"])
             
-        writer.writerow([row["datetime"], row["location_name"], row["number_of_vehicles_right_lane"], row["number_of_vehicles_left_lane"],
+        writer.writerow([row["datetime"], row["latitude"], row["longitude"], row["location_name"], row["number_of_vehicles_right_lane"], row["number_of_vehicles_left_lane"],
                         row["speed_right_lane"], row["speed_left_lane"], row["spacing_in_sec_right_lane"], row["spacing_in_sec_left_lane"],
                         row["density_type_right_lane"], row["density_type_left_lane"]])
 
-def search_traffic_counters_by_location(datetime_utc, location_name, direction, search_query, search_input, driver, wait):
+def search_traffic_counters_by_location(datetime_utc, location_name, direction, latitude, longitude, search_query, search_input, driver, wait):
     # Search for traffic counters data
     search_input.clear()
     search_input.send_keys(search_query)
@@ -71,6 +71,8 @@ def search_traffic_counters_by_location(datetime_utc, location_name, direction, 
     csv_row = {}
     csv_row["datetime"] = datetime_utc
     csv_row["location_name"] = location_name
+    csv_row["latitude"] = latitude
+    csv_row["longitude"] = longitude
 
     # Extract values from cells in each card
     for card in cards:
@@ -117,7 +119,7 @@ def scrape():
     datetime_utc = datetime.now(timezone.utc)
 
     chrome_options = Options()
-    chrome_options.add_argument('--headless')
+    #chrome_options.add_argument('--headless')
 
     driver = webdriver.Chrome(options=chrome_options)
     driver.get(URL)
@@ -138,12 +140,15 @@ def scrape():
     for highway_location in HIGHWAY_LOCATIONS:
         # print(highway_location)
         location_details = HIGHWAY_LOCATIONS[highway_location]
+        coordinates = HIGHWAY_LOCATIONS_COORDINATES[highway_location]
 
         for direction, location_name in location_details.items():
             # print(f"  - {direction}: {location_name}")
             search_traffic_counters_by_location(
                 datetime_utc=datetime_utc,
                 location_name=highway_location,
+                latitude=coordinates.Latitude,
+                longitude=coordinates.Longitude,
                 direction=direction,
                 search_query=location_name, 
                 search_input=search_input,

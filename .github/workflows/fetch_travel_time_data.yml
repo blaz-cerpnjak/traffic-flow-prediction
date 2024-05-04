@@ -40,11 +40,14 @@ jobs:
       - name: Scrape travel times
         run: python src/data/scrapers/travel_time_scraper.py
 
-      - name: Fetch weather data
-        run: python src/data/weather/fetch_weather_data.py
+      - name: Fetch weather data for travel times
+        run: python src/data/weather/fetch_weather_data.py travel-times
 
-      - name: Scrape traffic counters data
-        run: python src/data/scrapers/traffic_counters_scraper.py
+      - name: Scrape vehicle counters data
+        run: python src/data/scrapers/vehicle_counters_scraper.py
+
+      - name: Fetch weather data for vehicle counters
+        run: python src/data/weather/fetch_weather_data.py vehicle-counters
 
       - name: Push data to dvc
         run: |
