@@ -18,7 +18,7 @@ def save_weather_data_to_csv(datetime, latitude, longitude, path, weather_data):
     if not os.path.exists(path):
         os.makedirs(path)
 
-    csv_file_path = f"{path}/data.csv"
+    csv_file_path = f"{path}/weather_data.csv"
     csv_exists = os.path.exists(csv_file_path)
 
     with open(csv_file_path, mode='a', newline='') as file:
