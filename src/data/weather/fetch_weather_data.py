@@ -67,8 +67,6 @@ if __name__ == "__main__":
         location_names = [folder for folder in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, folder))]
         
         for location_name in location_names:
-            print(f"Fetching weather data for {location_name}...")
-
             path = f"data/travel_times/raw/{location_name}" 
             if not os.path.exists(path):
                 os.makedirs(path)
@@ -91,5 +89,4 @@ if __name__ == "__main__":
 
                 df = pd.read_csv(f'{path}/counters_data.csv')
                 last_row = df.iloc[-1]
-                print(last_row)
                 fetch_weather_data(pd.to_datetime(last_row['datetime']), last_row['latitude'], last_row['longitude'], path)
