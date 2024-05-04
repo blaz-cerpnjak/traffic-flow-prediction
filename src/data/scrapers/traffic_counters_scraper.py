@@ -34,11 +34,11 @@ def append_csv_row(location_name, direction, row):
         
         if not csv_exists:
             writer.writerow(["datetime", "location_name", "number_of_vehicles_right_lane", "number_of_vehicles_left_lane",
-                             "speed_right_lane", "speed_left_lane", "spacing_in_sec_right_lane", "spacing_in_sec_right_lane",
+                             "speed_right_lane", "speed_left_lane", "spacing_in_sec_right_lane", "spacing_in_sec_left_lane",
                              "density_type_right_lane", "density_type_left_lane"])
             
         writer.writerow([row["datetime"], row["location_name"], row["number_of_vehicles_right_lane"], row["number_of_vehicles_left_lane"],
-                        row["speed_right_lane"], row["speed_left_lane"], row["spacing_in_sec_right_lane"], row["spacing_in_sec_right_lane"],
+                        row["speed_right_lane"], row["speed_left_lane"], row["spacing_in_sec_right_lane"], row["spacing_in_sec_left_lane"],
                         row["density_type_right_lane"], row["density_type_left_lane"]])
 
 def search_traffic_counters_by_location(datetime_utc, location_name, direction, search_query, search_input, driver, wait):
