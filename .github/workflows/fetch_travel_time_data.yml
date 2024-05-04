@@ -43,8 +43,8 @@ jobs:
       - name: Fetch weather data
         run: python src/data/weather/fetch_weather_data.py
 
-      - name: Scrape traffic density data
-        run: python src/data/scrapers/traffic_density_scraper.py
+      - name: Scrape traffic counters data
+        run: python src/data/scrapers/traffic_counters_scraper.py
 
       - name: Push data to dvc
         run: |
