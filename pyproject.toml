@@ -6,7 +6,7 @@ authors = ["blaz-cerpnjak <blaz003cerpnjak@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<3.12"
 selenium = "^4.20.0"
 pandas = "^2.2.2"
 requests = "^2.31.0"
