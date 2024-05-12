@@ -51,7 +51,6 @@ jobs:
 
       - name: Push data to dvc
         run: |
-          git pull
           dvc add data
           dvc push
 
