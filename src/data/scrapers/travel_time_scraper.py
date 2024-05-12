@@ -58,7 +58,7 @@ def convert_to_minutes(time_str):
     else:
         return 0  # Invalid format
 
-def save_to_csv(datetime, location_name, travel_time_min):
+def save_to_csv(datetime, location_name, travel_time_min, type):
     path = f"data/travel_times/raw/{location_name}"
 
     if not os.path.exists(path):
@@ -73,13 +73,13 @@ def save_to_csv(datetime, location_name, travel_time_min):
         writer = csv.writer(file)
     
         if not csv_exists:
-            writer.writerow(["datetime", "latitude", "longitude", "location_name", "minutes"])
+            writer.writerow(["datetime", "latitude", "longitude", "location_name", "minutes", "traffic_type"])
             
-        writer.writerow([datetime, location.Latitude, location.Longitude, location_name, travel_time_min])
+        writer.writerow([datetime, location.Latitude, location.Longitude, location_name, travel_time_min, type])
 
 def scrape():
     """
-    Returns scraped travel times
+    Scrapers travel times
     """
     datetime_utc = datetime.now(timezone.utc)
     
@@ -105,24 +105,35 @@ def scrape():
     # Extract values from cells in each card
     for card in cards:
         location_name = card.find_element(By.CSS_SELECTOR, LOCATION_SELECTOR).text
+        type = "unknown"
 
         # Check if green badge is present, that means the road is open
         try:
             green_badge = card.find_element(By.CSS_SELECTOR, GREEN_BADGE_SELECTOR)
             if green_badge:
                 time = green_badge.text
+                type = "normal"
         except: pass
+
+        try:
+            orange_badge = card.find_element(By.CSS_SELECTOR, "div.badge.badge-orange.text-white.text-right.me-1")
+            if orange_badge:
+                time = orange_badge.text
+                type = "medium"
+        except:
+            pass
 
         # Check if red badge is present, that means the road is closed
         try:
             red_badge = card.find_element(By.CSS_SELECTOR, RED_BADGE_SELECTOR)
             if red_badge:
                 time = red_badge.text
+                type = "high"
         except: pass
 
         #road_closed = "Zaprto" in time # Check if the road is closed
         print(f"Location: {location_name}. Time: {time}. Trimmed: {trim_text(location_name)}. Min: {convert_to_minutes(time)}")
-        save_to_csv(datetime_utc, trim_text(location_name), convert_to_minutes(time))
+        save_to_csv(datetime_utc, trim_text(location_name), convert_to_minutes(time), type)
 
     # Close the browser
     driver.quit()
