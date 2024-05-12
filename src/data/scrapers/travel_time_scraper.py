@@ -15,6 +15,7 @@ CARD_SELECTOR = "div.card.shadow-sm.moj-promet-item.mt-2"
 LOCATION_SELECTOR = "div.flex-grow-1.fw-bold.text-primary"
 GREEN_BADGE_SELECTOR = "div.badge.badge-green.text-white.text-right.me-1"
 RED_BADGE_SELECTOR = "div.badge.badge-red.text-white.text-right.me-1"
+ORANGE_BADGE_SELECTOR = "div.badge.badge-orange.text-white.text-right.me-1"
 
 def trim_text(text):
     """
@@ -116,7 +117,7 @@ def scrape():
         except: pass
 
         try:
-            orange_badge = card.find_element(By.CSS_SELECTOR, "div.badge.badge-orange.text-white.text-right.me-1")
+            orange_badge = card.find_element(By.CSS_SELECTOR, ORANGE_BADGE_SELECTOR)
             if orange_badge:
                 time = orange_badge.text
                 type = "medium"
