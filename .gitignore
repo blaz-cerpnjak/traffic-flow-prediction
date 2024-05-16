@@ -5,6 +5,14 @@ __pycache__/
 
 data
 
+.DS_Store
+src/client/public/.DS_Store
+src/client/public/demo/.DS_Store
+src/client/public/themes/.DS_Store
+src/client/src/.DS_Store
+src/client/src/assets/.DS_Store
+src/client/src/views/.DS_Store
+
 # C extensions
 *.so
 
