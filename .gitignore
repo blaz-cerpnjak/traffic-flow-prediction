@@ -13,6 +13,8 @@ src/client/src/.DS_Store
 src/client/src/assets/.DS_Store
 src/client/src/views/.DS_Store
 
+src/client/node_modules/
+
 # C extensions
 *.so
 
