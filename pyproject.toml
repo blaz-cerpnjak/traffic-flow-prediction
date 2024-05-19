@@ -11,6 +11,9 @@ selenium = "^4.20.0"
 pandas = "^2.2.2"
 requests = "^2.31.0"
 dvc = {extras = ["s3"], version = "^3.50.1"}
+matplotlib = "^3.9.0"
+scikit-learn = "^1.4.2"
+tensorflow = "^2.16.1"
 
 
 [build-system]
