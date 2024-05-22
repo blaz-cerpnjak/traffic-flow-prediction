@@ -5,6 +5,8 @@ __pycache__/
 
 data
 
+.env
+
 .DS_Store
 src/client/public/.DS_Store
 src/client/public/demo/.DS_Store

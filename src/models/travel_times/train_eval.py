@@ -20,7 +20,9 @@ import tf2onnx
 import onnx
 import tensorflow as tf
 import joblib
-    
+import mlflow
+from dotenv import load_dotenv
+
 PROCESSED_DATA_DIR = '../../../data/travel_times/processed'
 REPORTS_DIR = '../../../reports/travel_times'
 MODELS_DIR = '../../../models/travel_times'
@@ -71,7 +73,9 @@ def train_and_evaluate(train_df, test_df, location_name, model_name):
     # Save the scalers to files
     for feature_name, scaler in scalers.items():
         os.makedirs(f"{MODELS_DIR}/{location_name}/scalers", exist_ok=True)
-        joblib.dump(scaler, f"{MODELS_DIR}/{location_name}/scalers/{feature_name}_scaler.joblib")
+        scaler_path = f"{MODELS_DIR}/{location_name}/scalers/{feature_name}_scaler.joblib"
+        joblib.dump(scaler, scaler_path)
+        mlflow.log_artifact(scaler_path)
 
     train_df = pd.DataFrame(train_df, columns=features)
     test_df = pd.DataFrame(test_df, columns=features)
@@ -100,6 +104,7 @@ def train_and_evaluate(train_df, test_df, location_name, model_name):
     # Save train history plot
     plt = thp.create_plot(history, model_name)
     plt.savefig(f'{REPORTS_DIR}/{location_name}/figures/{model_name}_train_history.png')
+    mlflow.log_artifact(f'{REPORTS_DIR}/{location_name}/figures/{model_name}_train_history.png')
 
     # Predict on test data
     scaler = preprocessor.named_transformers_['scaler_minutes']['normalize']
@@ -113,6 +118,10 @@ def train_and_evaluate(train_df, test_df, location_name, model_name):
     mse = mean_squared_error(y_test_inverse, predictions_inverse)
     ev = explained_variance_score(y_test_inverse, predictions_inverse)
 
+    mlflow.log_metric("MAE", mae)
+    mlflow.log_metric("MSE", mse)
+    mlflow.log_metric("EV", ev)
+
     with open(f'{REPORTS_DIR}/{location_name}/train_{model_name}_metrics.txt', 'w') as f:
         f.write(f"MAE: {mae}\n")
         f.write(f"MSE: {mse}\n")
@@ -125,14 +134,11 @@ def train_and_evaluate(train_df, test_df, location_name, model_name):
     
     plt = predictions_plot.create_plot(df, predictions_inverse, model_name, 'Travel time predictions', x_label='Time', y_label='Travel time (minutes)')
     plt.savefig(f'{REPORTS_DIR}/{location_name}/figures/{model_name}_predictions.png')
-
-    # Save model to .h5 file
-    model_path = f'{MODELS_DIR}/{location_name}/model.keras'
-    model.save(model_path)
- 
+    mlflow.log_artifact(f'{REPORTS_DIR}/{location_name}/figures/{model_name}_predictions.png')
+    
     #Convert to onnx
     onnx_model, _ = tf2onnx.convert.from_keras(model, input_signature=[tf.TensorSpec(shape=(None, len(features), window_size), dtype=tf.float32)])
-    onnx.save(onnx_model, f'{MODELS_DIR}/{location_name}/model.onnx')
+    mlflow.onnx.log_model(onnx_model, 'model.onnx')
     return
 
 
@@ -186,6 +192,8 @@ def create_lstm_model(input_shape):
 
 
 if __name__ == '__main__':
+    load_dotenv()
+
     #for location_name in os.listdir(PROCESSED_DATA_DIR):
     location_name = "LJ_KP"
     print(f"Processing {location_name} data...")
@@ -200,4 +208,15 @@ if __name__ == '__main__':
             train_df = pd.read_csv(train_csv_path)
             test_df = pd.read_csv(test_csv_path)
 
+            print(os.getenv('MLFLOW_TRACKING_URI'))
+
+            mlflow.set_tracking_uri(os.getenv('MLFLOW_TRACKING_URI'))
+            mlflow.environment_variables.MLFLOW_TRACKING_USERNAME = os.getenv('MLFLOW_TRACKING_USERNAME')
+            mlflow.environment_variables.MLFLOW_TRACKING_PASSWORD = os.getenv('MLFLOW_TRACKING_PASSWORD')
+            mlflow.tensorflow.autolog()
+            mlflow.set_experiment(f"{location_name}_travel_time_prediction")
+            mlflow.start_run()
+
             train_and_evaluate(train_df, test_df, location_name, "gru")
+
+            mlflow.end_run()
