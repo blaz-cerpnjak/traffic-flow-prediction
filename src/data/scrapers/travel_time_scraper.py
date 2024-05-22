@@ -160,7 +160,7 @@ if __name__ == "__main__":
         save_to_csv(
             data['datetime'], 
             trim_text(location),
-            convert_to_minutes(data['time']),
+            data['time'],
             data['latitude'],
             data['longitude'],
             data['type']
