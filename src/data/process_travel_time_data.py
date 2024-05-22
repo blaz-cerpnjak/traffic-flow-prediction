@@ -20,8 +20,6 @@ for subfolder in os.listdir(raw_data_dir):
             travel_times_df = pd.read_csv(travel_times_path)
             weather_data_df = pd.read_csv(weather_data_path)
             weather_data_df.drop(columns=['datetime'], inplace=True)
-            weather_data_df.drop(columns=['latitude'], inplace=True)
-            weather_data_df.drop(columns=['longitude'], inplace=True)
             
             os.makedirs(processed_subfolder_path, exist_ok=True)
 

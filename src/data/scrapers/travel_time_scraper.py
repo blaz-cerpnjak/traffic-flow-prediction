@@ -62,7 +62,7 @@ def convert_to_minutes(time_str):
         return 0  # Invalid format
 
 def save_to_csv(datetime, location_name, travel_time_min, latitude, longitude, type):
-    path = f"data/travel_times/raw/{location_name}"
+    path = f"../../../data/travel_times/raw/{location_name}"
 
     if not os.path.exists(path):
         os.makedirs(path)
