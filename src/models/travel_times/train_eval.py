@@ -9,15 +9,21 @@ from keras.callbacks import EarlyStopping
 from keras.layers import Dense, GRU, LSTM, SimpleRNN, Dropout
 from keras.models import Sequential
 from keras.optimizers import Adam
+from keras import layers
 from sklearn.metrics import mean_absolute_error, mean_squared_error, explained_variance_score
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.base import BaseEstimator, TransformerMixin
+import tf2onnx
+import onnx
+import tensorflow as tf
+import joblib
     
 PROCESSED_DATA_DIR = '../../../data/travel_times/processed'
 REPORTS_DIR = '../../../reports/travel_times'
+MODELS_DIR = '../../../models/travel_times'
 
 class CreateSequencesTransformer(BaseEstimator, TransformerMixin):
     def __init__(self, window_size):
@@ -63,12 +69,9 @@ def train_and_evaluate(train_df, test_df, location_name, model_name):
         scalers[feature] = scaler
 
     # Save the scalers to files
-    #for feature_name, scaler in scalers.items():
-    #    if not os.path.exists(f"../../models/scalers/{station_name}"):
-    #        os.makedirs(f"../../models/scalers/{station_name}")
-    #
-    #    scaler_filename = f"../../models/scalers/{station_name}/{feature_name}_scaler.joblib"
-    #    joblib.dump(scaler, scaler_filename)
+    for feature_name, scaler in scalers.items():
+        os.makedirs(f"{MODELS_DIR}/{location_name}/scalers", exist_ok=True)
+        joblib.dump(scaler, f"{MODELS_DIR}/{location_name}/scalers/{feature_name}_scaler.joblib")
 
     train_df = pd.DataFrame(train_df, columns=features)
     test_df = pd.DataFrame(test_df, columns=features)
@@ -120,18 +123,39 @@ def train_and_evaluate(train_df, test_df, location_name, model_name):
     # Inverse transform the minutes column
     df['minutes'] = scaler.inverse_transform(df['minutes'].values.reshape(-1, 1))
     
-    plt = predictions_plot.create_plot(df, predictions_inverse, model_name, 'Travel time predictions')
+    plt = predictions_plot.create_plot(df, predictions_inverse, model_name, 'Travel time predictions', x_label='Time', y_label='Travel time (minutes)')
     plt.savefig(f'{REPORTS_DIR}/{location_name}/figures/{model_name}_predictions.png')
+
+    # Save model to .h5 file
+    model_path = f'{MODELS_DIR}/{location_name}/model.keras'
+    model.save(model_path)
+ 
+    #Convert to onnx
+    onnx_model, _ = tf2onnx.convert.from_keras(model, input_signature=[tf.TensorSpec(shape=(None, len(features), window_size), dtype=tf.float32)])
+    onnx.save(onnx_model, f'{MODELS_DIR}/{location_name}/model.onnx')
     return
 
 
 def create_gru_model(input_shape):
+    """
     model = Sequential([
         GRU(64, input_shape=input_shape, return_sequences=True),
         GRU(32),
         Dense(16, activation='relu'),
         Dense(1)
     ])
+
+    model.compile(optimizer=Adam(learning_rate=0.0004), loss='mean_squared_error')
+    """
+    inputs = layers.Input(shape=input_shape)
+
+    x = layers.GRU(64, return_sequences=True)(inputs)
+    x = layers.GRU(32)(x)
+
+    x = layers.Dense(16, activation='relu')(x)
+    outputs = layers.Dense(1)(x)
+
+    model = tf.keras.Model(inputs=inputs, outputs=outputs)
 
     model.compile(optimizer=Adam(learning_rate=0.0004), loss='mean_squared_error')
     return model
@@ -162,18 +186,18 @@ def create_lstm_model(input_shape):
 
 
 if __name__ == '__main__':
-    for location_name in os.listdir(PROCESSED_DATA_DIR):
-        location_name = "LJ_KP"
-        print(f"Processing {location_name} data...")
+    #for location_name in os.listdir(PROCESSED_DATA_DIR):
+    location_name = "LJ_KP"
+    print(f"Processing {location_name} data...")
 
-        location_path = os.path.join(PROCESSED_DATA_DIR, location_name)
+    location_path = os.path.join(PROCESSED_DATA_DIR, location_name)
 
-        if os.path.isdir(location_path):
-            train_csv_path = os.path.join(location_path, 'train.csv')
-            test_csv_path = os.path.join(location_path, 'test.csv')
-            
-            if os.path.exists(train_csv_path) and os.path.exists(test_csv_path):
-                train_df = pd.read_csv(train_csv_path)
-                test_df = pd.read_csv(test_csv_path)
+    if os.path.isdir(location_path):
+        train_csv_path = os.path.join(location_path, 'train.csv')
+        test_csv_path = os.path.join(location_path, 'test.csv')
+        
+        if os.path.exists(train_csv_path) and os.path.exists(test_csv_path):
+            train_df = pd.read_csv(train_csv_path)
+            test_df = pd.read_csv(test_csv_path)
 
-                train_and_evaluate(train_df, test_df, location_name, "gru")
+            train_and_evaluate(train_df, test_df, location_name, "gru")

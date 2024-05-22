@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
 
 
-def create_plot(df, predictions, title, subtitle):
+def create_plot(df, predictions, title, subtitle, x_label, y_label):
     plt.figure(figsize=(20, 10))
     plt.plot(df.index[-len(predictions):], df['minutes'][-len(predictions):], label='Actual value')
     plt.plot(df.index[-len(predictions):], predictions, label='Prediction')
 
-    plt.xlabel('Time')
-    plt.ylabel('Available Bike Stands')
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
     plt.title(subtitle)
     plt.suptitle(title)
 
