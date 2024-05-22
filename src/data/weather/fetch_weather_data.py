@@ -71,7 +71,7 @@ if __name__ == "__main__":
             df = pd.read_csv(f'{base_dir}/{location_name}/travel_time_data.csv')
             last_row = df.iloc[-1]
             datetime_utc = pd.to_datetime(last_row['datetime'])
-            weather_data = fetch_weather_data(datetime_utc, last_row['latitude'], last_row['longitude'], path)
+            weather_data = fetch_weather_data(datetime_utc, last_row['latitude'], last_row['longitude'])
             
             save_weather_data_to_csv(datetime_utc, last_row['latitude'], last_row['longitude'], path, weather_data)
 
