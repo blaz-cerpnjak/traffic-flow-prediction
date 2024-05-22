@@ -3,11 +3,10 @@ import sys
 import os
 import csv
 import pandas as pd
-from datetime import datetime, timezone
 
 def get_item_by_hour(json_data, date_formatted, name, target_hour):
     """
-    From the hourly data of open-meteo weather api, get the value of a specific item at a specific hour
+    From the hourly data of open-meteo weather api, get the value of a specific item at a specific hour.
     """
     times = json_data['hourly']['time']
     target_hour_iso = f"{date_formatted}T{target_hour:02d}:00"
@@ -34,9 +33,9 @@ def save_weather_data_to_csv(datetime, latitude, longitude, path, weather_data):
                          weather_data['precipitation_probability'], weather_data['rain'],
                          weather_data['surface_pressure'], weather_data['apparent_temperature']])
 
-def fetch_weather_data(datetime, latitude, longitude, path):
+def fetch_weather_data(datetime, latitude, longitude):
     """
-    Fetches weather data for a specific datetime and location
+    Fetches and returns weather data for a specific datetime and location.
     """
     date, time = datetime.date(), datetime.time()
     date_formatted = date.strftime("%Y-%m-%d")
@@ -45,21 +44,19 @@ def fetch_weather_data(datetime, latitude, longitude, path):
   
     json_data = requests.get(url).json()
 
-    data = {}
-    data["temperature"] = get_item_by_hour(json_data, date_formatted, 'temperature_2m', time.hour)
-    data["relative_humidity"] = get_item_by_hour(json_data, date_formatted, 'relative_humidity_2m', time.hour)
-    data["dew_point"] = get_item_by_hour(json_data, date_formatted, 'dew_point_2m', time.hour)
-    data["precipitation"] = get_item_by_hour(json_data, date_formatted, 'precipitation', time.hour)
-    data["precipitation_probability"] = get_item_by_hour(json_data, date_formatted, 'precipitation_probability', time.hour)
-    data["rain"] = get_item_by_hour(json_data, date_formatted, 'rain', time.hour)
-    data["surface_pressure"] = get_item_by_hour(json_data, date_formatted, 'surface_pressure', time.hour)
-    data["apparent_temperature"] = get_item_by_hour(json_data, date_formatted, 'apparent_temperature', time.hour)
-    
-    save_weather_data_to_csv(datetime, latitude, longitude, path, data)
-    return
+    data = {
+        'temperature': get_item_by_hour(json_data, date_formatted, 'temperature_2m', time.hour),
+        'relative_humidity': get_item_by_hour(json_data, date_formatted, 'relative_humidity_2m', time.hour),
+        'dew_point': get_item_by_hour(json_data, date_formatted, 'dew_point_2m', time.hour),
+        'precipitation': get_item_by_hour(json_data, date_formatted, 'precipitation', time.hour),
+        'precipitation_probability': get_item_by_hour(json_data, date_formatted, 'precipitation_probability', time.hour),
+        'rain': get_item_by_hour(json_data, date_formatted, 'rain', time.hour),
+        'surface_pressure': get_item_by_hour(json_data, date_formatted, 'surface_pressure', time.hour),
+        'apparent_temperature': get_item_by_hour(json_data, date_formatted, 'apparent_temperature', time.hour)
+    }
+    return data
 
 if __name__ == "__main__":
-    
     type = sys.argv[1]
 
     if type == "travel-times":
@@ -73,8 +70,11 @@ if __name__ == "__main__":
 
             df = pd.read_csv(f'{base_dir}/{location_name}/travel_time_data.csv')
             last_row = df.iloc[-1]
-            fetch_weather_data(pd.to_datetime(last_row['datetime']), last_row['latitude'], last_row['longitude'], path)
-    
+            datetime_utc = pd.to_datetime(last_row['datetime'])
+            weather_data = fetch_weather_data(datetime_utc, last_row['latitude'], last_row['longitude'], path)
+            
+            save_weather_data_to_csv(datetime_utc, last_row['latitude'], last_row['longitude'], path, weather_data)
+
     elif type == "vehicle-counters":
         base_dir = 'data/vehicle_counters/raw'
 
@@ -89,4 +89,7 @@ if __name__ == "__main__":
 
                 df = pd.read_csv(f'{path}/counters_data.csv')
                 last_row = df.iloc[-1]
-                fetch_weather_data(pd.to_datetime(last_row['datetime']), last_row['latitude'], last_row['longitude'], path)
+                datetime_utc = pd.to_datetime(last_row['datetime'])
+                weather_data = fetch_weather_data(datetime_utc, last_row['latitude'], last_row['longitude'], path)
+
+                save_weather_data_to_csv(datetime_utc, last_row['latitude'], last_row['longitude'], path, weather_data)

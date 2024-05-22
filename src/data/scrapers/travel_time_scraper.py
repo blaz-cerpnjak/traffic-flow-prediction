@@ -1,3 +1,5 @@
+import sys
+sys.path.append("../../../")
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -6,7 +8,7 @@ from selenium.webdriver.chrome.options import Options
 import re
 import os
 import csv
-from locations import LOCATIONS
+from src.data.scrapers.locations import LOCATIONS
 from datetime import datetime, timezone
 
 URL = "https://promet.si/sl/potovalni-casi"
@@ -59,7 +61,7 @@ def convert_to_minutes(time_str):
     else:
         return 0  # Invalid format
 
-def save_to_csv(datetime, location_name, travel_time_min, type):
+def save_to_csv(datetime, location_name, travel_time_min, latitude, longitude, type):
     path = f"data/travel_times/raw/{location_name}"
 
     if not os.path.exists(path):
@@ -68,20 +70,19 @@ def save_to_csv(datetime, location_name, travel_time_min, type):
     csv_file_path = f"{path}/travel_time_data.csv"
     csv_exists = os.path.exists(csv_file_path)
 
-    location = LOCATIONS[location_name]
-
     with open(csv_file_path, mode='a', newline='') as file:
         writer = csv.writer(file)
     
         if not csv_exists:
             writer.writerow(["datetime", "latitude", "longitude", "location_name", "minutes", "traffic_type"])
             
-        writer.writerow([datetime, location.Latitude, location.Longitude, location_name, travel_time_min, type])
+        writer.writerow([datetime, latitude, longitude, location_name, travel_time_min, type])
 
-def scrape():
+def scrape_travel_times():
     """
-    Scrapers travel times
+    Scrapers and returns current travel times for each location.
     """
+    travel_times = {}
     datetime_utc = datetime.now(timezone.utc)
     
     chrome_options = Options()
@@ -134,10 +135,33 @@ def scrape():
 
         #road_closed = "Zaprto" in time # Check if the road is closed
         print(f"Location: {location_name}. Time: {time}. Trimmed: {trim_text(location_name)}. Min: {convert_to_minutes(time)}")
-        save_to_csv(datetime_utc, trim_text(location_name), convert_to_minutes(time), type)
+
+        trimmed_location_name = trim_text(location_name)
+        location = LOCATIONS[trimmed_location_name]
+
+        travel_times[trimmed_location_name] = {
+            'datetime': datetime_utc,
+            'location': trimmed_location_name,
+            'time': convert_to_minutes(time),
+            'type': type,
+            'latitude': location.Latitude,
+            'longitude': location.Longitude
+        }
 
     # Close the browser
     driver.quit()
 
+    return travel_times
+
 if __name__ == "__main__":
-    scrape()
+    travel_times_dictionary = scrape_travel_times()
+
+    for location, data in travel_times_dictionary.items():
+        save_to_csv(
+            data['datetime_utc'], 
+            trim_text(location),
+            convert_to_minutes(data['time']),
+            data['latitude'],
+            data['longitude'],
+            data['type']
+        )

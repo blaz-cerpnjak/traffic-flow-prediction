@@ -22,6 +22,7 @@ import tensorflow as tf
 import joblib
 import mlflow
 from dotenv import load_dotenv
+from mlflow.tracking import MlflowClient
 
 PROCESSED_DATA_DIR = '../../../data/travel_times/processed'
 REPORTS_DIR = '../../../reports/travel_times'
@@ -96,7 +97,7 @@ def train_and_evaluate(train_df, test_df, location_name, model_name):
     # Create and train the model
     model = create_gru_model(input_shape)
     early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-    history = model.fit(X_train, y_train, epochs=100, validation_split=0.2, verbose=1, callbacks=[early_stopping])
+    history = model.fit(X_train, y_train, epochs=5, validation_split=0.2, verbose=1, callbacks=[early_stopping])
 
     os.makedirs(f'{REPORTS_DIR}/{location_name}', exist_ok=True)
     os.makedirs(f'{REPORTS_DIR}/{location_name}/figures', exist_ok=True)
@@ -138,9 +139,46 @@ def train_and_evaluate(train_df, test_df, location_name, model_name):
     
     #Convert to onnx
     onnx_model, _ = tf2onnx.convert.from_keras(model, input_signature=[tf.TensorSpec(shape=(None, len(features), window_size), dtype=tf.float32)])
-    mlflow.onnx.log_model(onnx_model, 'model.onnx')
+    logged_model_name = f'{location_name}_travel_time_onnx_model'
+    mlflow.onnx.log_model(onnx_model, logged_model_name)
+
+    # Register model
+    register_model()
     return
 
+def register_model(logged_model_name, mae, mse, ev):
+    client = MlflowClient()
+
+    # Register model
+    new_model_uri = f"runs:/{mlflow.active_run().info.run_id}/{logged_model_name}"
+    new_registered_model = mlflow.register_model(new_model_uri, f'{logged_model_name}')
+
+    # Check if the new model is better than the current production model
+    latest_production_models = client.get_latest_versions(logged_model_name, stages=["Production"])
+
+    if (len(latest_production_models) > 0):
+        run = mlflow.get_run(latest_production_models[0].run_id)
+
+        if (mae > run.data.metrics["MAE"]) or (mse > run.data.metrics["MSE"]) or (ev < run.data.metrics["EV"]):
+            print(f"New model is not better than the current production model. Keeping the current production model...")
+            return
+
+        print(f"New model is better than the current production model. Transitioning to production...")
+
+        # Archive the current production model
+        client.transition_model_version_stage(
+            name=logged_model_name,
+            version=latest_production_models[0].version,
+            stage="archived",
+        )
+
+    # Promote the new model to production
+    client.transition_model_version_stage(
+        name=logged_model_name,
+        version=new_registered_model.version,
+        stage="production",
+    )
+    return
 
 def create_gru_model(input_shape):
     """
