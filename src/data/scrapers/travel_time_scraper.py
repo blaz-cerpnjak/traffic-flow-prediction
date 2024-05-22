@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
     for location, data in travel_times_dictionary.items():
         save_to_csv(
-            data['datetime_utc'], 
+            data['datetime'], 
             trim_text(location),
             convert_to_minutes(data['time']),
             data['latitude'],
