@@ -1,0 +1,43 @@
+name: Fetch Travel Times & Weather Data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *' # every hour
+
+jobs:
+  fetch_raw_mbajk_data:
+    runs-on: ubuntu-latest
+
+    outputs:
+      sha_new: ${{ steps.sha_new.outputs.SHA_NEW }}
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: python -m pip install selenium requests pandas dvc[s3]
+
+      - name: Authenticate dvc remote
+        run: |
+          dvc remote modify origin --local access_key_id "${{ secrets.DVC_ACCESS_KEY_ID }}"
+          dvc remote modify origin --local secret_access_key "${{ secrets.DVC_SECRET_ACCESS_KEY }}" 
+
+      - name: Pull data from dvc
+        run: dvc pull
+
+      - name: Train models
+        run: |
+          cd src/models/travel_times
+          python train_eval.py

@@ -143,7 +143,7 @@ def train_and_evaluate(train_df, test_df, location_name, model_name):
     mlflow.onnx.log_model(onnx_model, logged_model_name)
 
     # Register model
-    register_model()
+    register_model(logged_model_name, mae, mse, ev)
     return
 
 def register_model(logged_model_name, mae, mse, ev):
@@ -232,29 +232,29 @@ def create_lstm_model(input_shape):
 if __name__ == '__main__':
     load_dotenv()
 
-    #for location_name in os.listdir(PROCESSED_DATA_DIR):
-    location_name = "LJ_KP"
-    print(f"Processing {location_name} data...")
+    for location_name in os.listdir(PROCESSED_DATA_DIR):
+        #location_name = "LJ_KP"
+        print(f"Processing {location_name} data...")
 
-    location_path = os.path.join(PROCESSED_DATA_DIR, location_name)
+        location_path = os.path.join(PROCESSED_DATA_DIR, location_name)
 
-    if os.path.isdir(location_path):
-        train_csv_path = os.path.join(location_path, 'train.csv')
-        test_csv_path = os.path.join(location_path, 'test.csv')
-        
-        if os.path.exists(train_csv_path) and os.path.exists(test_csv_path):
-            train_df = pd.read_csv(train_csv_path)
-            test_df = pd.read_csv(test_csv_path)
+        if os.path.isdir(location_path):
+            train_csv_path = os.path.join(location_path, 'train.csv')
+            test_csv_path = os.path.join(location_path, 'test.csv')
+            
+            if os.path.exists(train_csv_path) and os.path.exists(test_csv_path):
+                train_df = pd.read_csv(train_csv_path)
+                test_df = pd.read_csv(test_csv_path)
 
-            print(os.getenv('MLFLOW_TRACKING_URI'))
+                print(os.getenv('MLFLOW_TRACKING_URI'))
 
-            mlflow.set_tracking_uri(os.getenv('MLFLOW_TRACKING_URI'))
-            mlflow.environment_variables.MLFLOW_TRACKING_USERNAME = os.getenv('MLFLOW_TRACKING_USERNAME')
-            mlflow.environment_variables.MLFLOW_TRACKING_PASSWORD = os.getenv('MLFLOW_TRACKING_PASSWORD')
-            mlflow.tensorflow.autolog()
-            mlflow.set_experiment(f"{location_name}_travel_time_prediction")
-            mlflow.start_run()
+                mlflow.set_tracking_uri(os.getenv('MLFLOW_TRACKING_URI'))
+                mlflow.environment_variables.MLFLOW_TRACKING_USERNAME = os.getenv('MLFLOW_TRACKING_USERNAME')
+                mlflow.environment_variables.MLFLOW_TRACKING_PASSWORD = os.getenv('MLFLOW_TRACKING_PASSWORD')
+                mlflow.tensorflow.autolog()
+                mlflow.set_experiment(f"{location_name}_travel_time_prediction")
+                mlflow.start_run()
 
-            train_and_evaluate(train_df, test_df, location_name, "gru")
+                train_and_evaluate(train_df, test_df, location_name, "gru")
 
-            mlflow.end_run()
+                mlflow.end_run()
