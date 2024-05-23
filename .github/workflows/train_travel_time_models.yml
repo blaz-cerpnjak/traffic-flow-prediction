@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  fetch_raw_mbajk_data:
+  train_travel_time_models:
     runs-on: ubuntu-latest
 
     outputs:
@@ -25,7 +25,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: python -m pip install selenium requests pandas dvc[s3]
+        run: |
+          python -m pip install poetry
+          poetry install
 
       - name: Authenticate dvc remote
         run: |
