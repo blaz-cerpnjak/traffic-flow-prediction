@@ -40,4 +40,4 @@ jobs:
       - name: Train models
         run: |
           cd src/models/travel_times
-          poetry python -m train_eval
+          poetry run python -m train_eval
