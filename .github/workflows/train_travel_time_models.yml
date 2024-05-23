@@ -1,9 +1,7 @@
-name: Fetch Travel Times & Weather Data
+name: Train Travel Time Models
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 * * * *' # every hour
 
 jobs:
   fetch_raw_mbajk_data:
