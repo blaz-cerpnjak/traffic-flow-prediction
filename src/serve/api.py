@@ -8,7 +8,6 @@ from src.serve.utils.predict_travel_times_service import predict_travel_time
 from src.utils.locations import LOCATIONS, LOCATION_NAMES
 import onnx
 
-models = {}
 scalers = {}
 
 app = FastAPI()
@@ -45,9 +44,6 @@ async def predict_travel_times_service():
     predictions = []
 
     for location_name in LOCATIONS.keys():
-        if location_name not in models:
-            continue
-
         if location_name not in scalers:
             continue
 
@@ -73,8 +69,9 @@ async def predict_travel_times_service():
 
 def load_production_models():
     print("Loading production models...")
-    models['LJ_KP'], scalers['LJ_KP'] = models_service.fetch_current_travel_time_model('LJ_KP')
-    onnx.save(models['LJ_KP'], 'LJ_KP_model.onnx')
+    for location_name in LOCATIONS.keys():
+        model, scalers[location_name] = models_service.fetch_current_travel_time_model(location_name)
+        onnx.save(model, f'{location_name}_model.onnx')
     
 if __name__ == "__main__":
     import uvicorn
