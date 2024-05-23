@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from src.serve.utils import models_service
 from src.serve.utils.predict_travel_times_service import predict_travel_time
+from src.utils.locations import LOCATIONS, LOCATION_NAMES
 import onnx
 
 models = {}
@@ -38,6 +39,37 @@ async def predict_travel_times_service(location_name: str):
 
     prediction = predict_travel_time(f'{location_name}_model.onnx', model_scalers, location_name)
     return {"prediction": int(prediction[0][0])}
+
+@app.get("/travel-times/predict")
+async def predict_travel_times_service():
+    predictions = []
+
+    for location_name in LOCATIONS.keys():
+        if location_name not in models:
+            continue
+
+        if location_name not in scalers:
+            continue
+
+        model_scalers = scalers[location_name]
+        if model_scalers is None:
+            continue
+
+        prediction = predict_travel_time(f'{location_name}_model.onnx', model_scalers, location_name)
+        traffic_status = 'HIGH TRAFFIC' if prediction > 150 else 'MEDIUM TRAFFIC' if prediction > 100 else 'LOW TRAFFIC'
+        
+        destination = LOCATION_NAMES[location_name]
+        if destination is None:
+            destination = "Uknown"
+
+        predictions.append({
+            'location': location_name,
+            'destination': destination,
+            'minutes': int(prediction[0][0]),
+            'status': traffic_status
+        })
+
+    return {'predictions': predictions}
 
 def load_production_models():
     print("Loading production models...")

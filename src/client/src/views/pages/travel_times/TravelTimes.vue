@@ -37,118 +37,33 @@
       </DataTable>
     </div>
   </div>
+  <Toast />
 </template>
 <script setup>
-import {onMounted, ref} from "vue";
+import { onMounted, ref } from "vue";
+import axios from "axios";
+import { useToast } from "primevue/usetoast";
 
+const toast = useToast();
 const loading = ref(true)
 const travelTimes = ref([])
 
 const loadTravelTimes = async () => {
-    loading.value = true
+  loading.value = true
 
-    // Simulate a delay
-    await new Promise(resolve => setTimeout(resolve, 2000))
+  try {
+    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/travel-times/predict/`)
+    if (!response.data) {
+      toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })
+      return
+    }
 
-  travelTimes.value = [
-      {
-        destination: "Ljubljana - KP",
-        minutes: 155,
-        status: 'HIGH TRAFFIC'
-      },
-      {
-        destination: "Ljubljana - MB",
-        minutes: 120,
-        status: 'MEDIUM TRAFFIC',
-      },
-      {
-        destination: "Ljubljana - NM",
-        minutes: 90,
-        status: 'LOW TRAFFIC',
-      },
-      {
-        destination: "Ljubljana - CE",
-        minutes: 60,
-        status: 'LOW TRAFFIC',
-      },
-      {
-        destination: "Ljubljana - MS",
-        minutes: 30
-      },
-      {
-        destination: "Ljubljana - GO",
-        minutes: 15
-      },
-      {
-        destination: "Ljubljana - KP",
-        minutes: 155
-      },
-      {
-        destination: "Ljubljana - MB",
-        minutes: 120
-      },
-      {
-        destination: "Ljubljana - NM",
-        minutes: 90
-      },
-      {
-        destination: "Ljubljana - CE",
-        minutes: 60
-      },
-      {
-        destination: "Ljubljana - MS",
-        minutes: 30
-      },
-      {
-        destination: "Ljubljana - GO",
-        minutes: 15
-      },
-      {
-        destination: "Ljubljana - KP",
-        minutes: 155
-      },
-      {
-        destination: "Ljubljana - MB",
-        minutes: 120
-      },
-      {
-        destination: "Ljubljana - NM",
-        minutes: 90
-      },
-      {
-        destination: "Ljubljana - CE",
-        minutes: 60
-      },
-      {
-        destination: "Ljubljana - MS",
-        minutes: 30
-      },
-      {
-        destination: "Ljubljana - GO",
-        minutes: 15
-      },
-      {
-        destination: "Ljubljana - KP",
-        minutes: 155
-      },
-      {
-        destination: "Ljubljana - MB",
-        minutes: 120
-      },
-      {
-        destination: "Ljubljana - NM",
-        minutes: 90
-      },
-      {
-        destination: "Ljubljana - CE",
-        minutes: 60
-      },
-      {
-        destination: "Ljubljana - MS",
-        minutes: 30
-      },
-    ]
+    travelTimes.value = response.data.predictions
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })
+  } finally {
     loading.value = false
+  }
 };
 
 onMounted(() => {
