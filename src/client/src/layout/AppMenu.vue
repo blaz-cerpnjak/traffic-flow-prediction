@@ -5,10 +5,11 @@ import AppMenuItem from './AppMenuItem.vue';
 
 const model = ref([
     {
-        label: 'Home',
+        label: 'Travel Times',
         items: [
-            { label: 'Dashboard', icon: 'pi pi-fw pi-home', to: '/' },
-            { label: 'Travel Times', icon: 'pi pi-fw pi-clock', to: '/travelTimes' }
+            { label: 'Predictions', icon: 'pi pi-fw pi-home', to: '/' },
+            { label: 'Model Metrics', icon: 'pi pi-fw pi-clock', to: '/modelMetrics' },
+            { label: 'Other Model Info', icon: 'pi pi-fw pi-clock', to: '/modelInfo' }
         ]
     },
     {

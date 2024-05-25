@@ -10,14 +10,19 @@ const router = createRouter({
             children: [
                 {
                     path: '/',
-                    name: 'dashboard',
-                    component: () => import('@/views/pages/Empty.vue')
-                },
-                {
-                    path: '/travelTimes',
                     name: 'travelTimes',
                     component: () => import('@/views/pages/travel_times/TravelTimes.vue')
                 },
+                {
+                    path: '/modelMetrics',
+                    name: 'modelMetrics',
+                    component: () => import('@/views/pages/travel_times/model-metrics/ModelMetrics.vue')
+                },
+                {
+                    path: '/modelInfo',
+                    name: 'modelInfo',
+                    component: () => import('@/views/pages/travel_times/model-metrics/ModelMetrics.vue')
+                }
             ]
         },
         {

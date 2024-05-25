@@ -2,7 +2,7 @@
   <div>
     <div v-if="loading || !travelTimes" class="card">
       <h5>Travel Times</h5>
-      <p>Use this page to start from scratch and place your custom content.</p>
+      <p>Travel time predictions for {{ predictionsDate }}</p>
       <DataTable :value="loading ? 7 : travelTimes" tableStyle="min-width: 50rem">
         <Column field="destination" header="Destination" sortable style="width: 50%">
           <template #body>
@@ -25,7 +25,7 @@
     </div>
     <div v-else class="card">
       <h5>Travel Times</h5>
-      <p>Use this page to start from scratch and place your custom content.</p>
+      <p>Travel predictions for {{ predictionsDate }}</p>
       <DataTable :value="travelTimes" tableStyle="min-width: 50rem">
         <Column field="destination" header="Destination" sortable style="width: 50%"></Column>
         <Column field="minutes" header="Minutes" sortable style="width: 25%"></Column>
@@ -45,8 +45,9 @@ import axios from "axios";
 import { useToast } from "primevue/usetoast";
 
 const toast = useToast();
-const loading = ref(true)
-const travelTimes = ref([])
+const loading = ref(true);
+const travelTimes = ref([]);
+const predictionsDate = ref('N/A');
 
 const loadTravelTimes = async () => {
   loading.value = true
@@ -67,7 +68,10 @@ const loadTravelTimes = async () => {
 };
 
 onMounted(() => {
-    loadTravelTimes()
+  const currentDate = new Date();
+  currentDate.setHours(currentDate.getHours() + 1);
+  predictionsDate.value = currentDate.toLocaleDateString() + ' ' + currentDate.toLocaleTimeString();
+  loadTravelTimes()
 })
 
 const getSeverity = (status) => {
