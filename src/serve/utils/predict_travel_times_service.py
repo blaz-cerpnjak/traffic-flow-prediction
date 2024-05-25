@@ -5,6 +5,9 @@ import numpy as np
 import onnxruntime as rt
 from src.data.scrapers import travel_time_scraper
 from src.data.weather import fetch_weather_data as weather_service
+from src.utils.locations import LOCATIONS, LOCATION_NAMES
+import math
+from datetime import datetime
 
 def get_last_window(location_name, window_size=24):
     # TODO: load from mongodb
@@ -12,13 +15,16 @@ def get_last_window(location_name, window_size=24):
     df = df.tail(window_size)
     return df
 
-def predict_travel_time(model_path, scalers, location_name):
-    temperature_scaler = scalers['apparent_temperature_scaler']
+def predict_travel_time(model_path, scalers, location_name, df):
+    """
+    Returns travel time (minutes) prediction for next hour at the given `location_name` location.
+    """
+    #temperature_scaler = scalers['apparent_temperature_scaler']
     minutes_scaler = scalers['minutes_scaler']
 
-    df = get_last_window(location_name)
-    df['apparent_temperature'] = temperature_scaler.transform(df['apparent_temperature'].values.reshape(-1, 1))
-    df['minutes'] = minutes_scaler.transform(df['minutes'].values.reshape(-1, 1))
+    #df = get_last_window(location_name)
+    #df['apparent_temperature'] = temperature_scaler.transform(df['apparent_temperature'].values.reshape(-1, 1))
+    #df['minutes'] = minutes_scaler.transform(df['minutes'].values.reshape(-1, 1))
 
     features = ['apparent_temperature', 'minutes']
     X = df[features]
@@ -32,3 +38,74 @@ def predict_travel_time(model_path, scalers, location_name):
     inverse_transformed = minutes_scaler.inverse_transform(onnx_predictions)
     
     return inverse_transformed
+
+def predict_travel_times_for_next_hours(model_path, scalers, location_name, hours):
+    """
+    Returns predictions for the next `hours` hours at the given location.
+    """
+    predictions_by_hour = {}
+    temperature_scaler = scalers['apparent_temperature_scaler']
+    minutes_scaler = scalers['minutes_scaler']
+
+    df = get_last_window(location_name)
+    df['apparent_temperature'] = temperature_scaler.transform(df['apparent_temperature'].values.reshape(-1, 1))
+    df['minutes'] = minutes_scaler.transform(df['minutes'].values.reshape(-1, 1))
+
+    prediction = predict_travel_time(model_path, scalers, location_name, df)
+    if math.isnan(prediction[0][0]):
+        return None
+    
+    destination = LOCATION_NAMES[location_name]
+    if destination is None:
+        destination = "Unknown"
+
+    print("Prediction: ", prediction[0][0])
+
+    latitude = df.iloc[-1]['latitude']
+    longitude = df.iloc[-1]['longitude']
+    datetime_utc = pd.to_datetime(df.iloc[-1]['datetime'])
+
+    predictions_by_hour = []
+    prediction_item = {}
+    prediction_item['location'] = location_name
+    prediction_item['destination'] = destination
+    prediction_item['datetime'] = datetime_utc.strftime("%Y-%m-%d %H:%M:%S")
+    prediction_item['minutes'] = int(prediction[0][0])
+    prediction_item['traffic_status'] = 'HIGH TRAFFIC' if prediction > 150 else 'MEDIUM TRAFFIC' if prediction > 100 else 'LOW TRAFFIC'
+    predictions_by_hour.append(prediction_item)
+
+    print("Hours: ", hours)
+
+    if hours > 0:
+        for _ in range(hours):
+            datetime_utc = datetime_utc + pd.Timedelta(hours=1)
+            weather_data = weather_service.fetch_weather_data(datetime_utc, latitude, longitude)
+            apparent_temperature = weather_data['apparent_temperature']
+
+            new_row = {
+                'datetime': datetime_utc,
+                'latitude': latitude,
+                'longitude': longitude,
+                'apparent_temperature': apparent_temperature,
+                'minutes': prediction[0][0]
+            }
+
+            new_row = pd.DataFrame([new_row])
+            new_row['apparent_temperature'] = temperature_scaler.transform(new_row['apparent_temperature'].values.reshape(-1, 1))
+            new_row['minutes'] = minutes_scaler.transform(new_row['minutes'].values.reshape(-1, 1))
+
+            df = df.iloc[1:]
+            df = pd.concat([df, new_row], ignore_index=True)
+
+            prediction = predict_travel_time(model_path, scalers, location_name, df)
+            print("Prediction: ", prediction[0][0])
+            prediction_item = {}
+            prediction_item['location'] = location_name
+            prediction_item['destination'] = destination
+            prediction_item['datetime'] = datetime_utc.strftime("%Y-%m-%d %H:%M:%S")
+            prediction_item['minutes'] = int(prediction[0][0])
+            prediction_item['traffic_status'] = 'HIGH TRAFFIC' if prediction > 150 else 'MEDIUM TRAFFIC' if prediction > 100 else 'LOW TRAFFIC'
+            predictions_by_hour.append(prediction_item)
+
+    print(predictions_by_hour)
+    return predictions_by_hour

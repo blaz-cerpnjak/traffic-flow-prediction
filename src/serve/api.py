@@ -4,7 +4,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from src.serve.utils import models_service, mlflow_service
-from src.serve.utils.predict_travel_times_service import predict_travel_time
+from src.serve.utils.predict_travel_times_service import predict_travel_times_for_next_hours
 from src.utils.locations import LOCATIONS, LOCATION_NAMES
 import onnx
 import math
@@ -25,8 +25,8 @@ app.add_middleware(
 async def ping():
     return "pong"
 
-@app.get("/travel-times/predict/{location_name}")
-async def predict_travel_times_service(location_name: str):
+@app.get("/travel-times/predict/{location_name}/{hours}")
+async def predict_travel_times_service(location_name: str, hours: int):
     if location_name not in scalers:
         raise HTTPException(status_code=404, detail="Location not found")
 
@@ -34,8 +34,9 @@ async def predict_travel_times_service(location_name: str):
     if model_scalers is None:
         raise HTTPException(status_code=404, detail="Location not found")
 
-    prediction = predict_travel_time(f'{location_name}_model.onnx', model_scalers, location_name)
-    return {"prediction": int(prediction[0][0])}
+    predictions = predict_travel_times_for_next_hours(f'{location_name}_model.onnx', model_scalers, location_name, hours)
+    print(predictions)
+    return {'predictions': predictions}
 
 @app.get("/travel-times/predict")
 async def predict_travel_times_service():
@@ -49,7 +50,9 @@ async def predict_travel_times_service():
         if model_scalers is None:
             continue
 
-        prediction = predict_travel_time(f'{location_name}_model.onnx', model_scalers, location_name)
+        prediction = predict_travel_times_for_next_hours(f'{location_name}_model.onnx', model_scalers, location_name, 0)
+        predictions.append(prediction)
+        """
         if math.isnan(prediction[0][0]):
             predictions.append({
                 'location': location_name,
@@ -58,19 +61,22 @@ async def predict_travel_times_service():
                 'status': 'N/A'
             })
             continue
+        """
 
-        traffic_status = 'HIGH TRAFFIC' if prediction > 150 else 'MEDIUM TRAFFIC' if prediction > 100 else 'LOW TRAFFIC'
+        #traffic_status = 'HIGH TRAFFIC' if prediction > 150 else 'MEDIUM TRAFFIC' if prediction > 100 else 'LOW TRAFFIC'
         
-        destination = LOCATION_NAMES[location_name]
-        if destination is None:
-            destination = "Uknown"
+        #destination = LOCATION_NAMES[location_name]
+        #if destination is None:
+        #    destination = "Uknown"
 
+        """
         predictions.append({
             'location': location_name,
             'destination': destination,
             'minutes': int(prediction[0][0]),
             'status': traffic_status
         })
+        """
 
     return {'predictions': predictions}
 
