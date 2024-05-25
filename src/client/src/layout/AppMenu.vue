@@ -7,9 +7,9 @@ const model = ref([
     {
         label: 'Travel Times',
         items: [
-            { label: 'Predictions', icon: 'pi pi-fw pi-home', to: '/' },
-            { label: 'Model Metrics', icon: 'pi pi-fw pi-clock', to: '/modelMetrics' },
-            { label: 'Other Model Info', icon: 'pi pi-fw pi-clock', to: '/modelInfo' }
+            { label: 'Predictions', icon: 'pi pi-fw pi-car', to: '/' },
+            { label: 'Model Metrics', icon: 'pi pi-fw pi-chart-bar', to: '/modelMetrics' },
+            { label: 'Other Model Info', icon: 'pi pi-fw pi-info-circle', to: '/modelInfo' }
         ]
     },
     {

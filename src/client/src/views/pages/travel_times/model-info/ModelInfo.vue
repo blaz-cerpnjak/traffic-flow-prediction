@@ -1,11 +1,188 @@
-<script setup>
-
-</script>
-
 <template>
-
+  <div class="card">
+    <h4>Travel Time Models Info</h4>
+    <Dropdown v-model="selectedLocation" :options="locations" :loading="isLoading" @change="onLocationSelected" filter optionLabel="name" placeholder="Select a location" class="w-full md:w-20rem">
+      <template #value="slotProps">
+        <div v-if="slotProps.value" class="flex align-items-center">{{ slotProps.value.name }}</div>
+        <span v-else>{{ slotProps.placeholder }}</span>
+      </template>
+      <template #option="slotProps">
+        <div class="flex align-items-center">
+          <div>{{ slotProps.option.name }}</div>
+        </div>
+      </template>
+    </Dropdown>
+  </div>
+  <div class="grid">
+    <!-- MAE, MSE, EV Metric Cards -->
+    <div class="col-12 lg:col-6 xl:col-4">
+      <div class="card mb-0">
+        <div class="flex justify-content-between mb-3">
+          <div>
+            <span class="block text-500 font-medium mb-3">Epochs</span>
+            <div class="text-900 font-medium text-xl">{{ epochs }}</div>
+          </div>
+          <div class="flex align-items-center justify-content-center bg-blue-100 border-round" style="width: 2.5rem; height: 2.5rem">
+            <i class="pi pi-chart-line text-blue-500 text-xl"></i>
+          </div>
+        </div>
+        <span class="text-green-500 font-medium">+ 1% </span>
+        <span class="text-500">since last</span>
+      </div>
+    </div>
+    <div class="col-12 lg:col-6 xl:col-4">
+      <div class="card mb-0">
+        <div class="flex justify-content-between mb-3">
+          <div>
+            <span class="block text-500 font-medium mb-3">Validation Split</span>
+            <div class="text-900 font-medium text-xl">{{ validationSplit }}</div>
+          </div>
+          <div class="flex align-items-center justify-content-center bg-orange-100 border-round" style="width: 2.5rem; height: 2.5rem">
+            <i class="pi pi-chart-line text-orange-500 text-xl"></i>
+          </div>
+        </div>
+        <span class="text-green-500 font-medium">+ 1% </span>
+        <span class="text-500">since last</span>
+      </div>
+    </div>
+    <div class="col-12 lg:col-6 xl:col-4">
+      <div class="card mb-0">
+        <div class="flex justify-content-between mb-3">
+          <div>
+            <span class="block text-500 font-medium mb-3">Monitor</span>
+            <div class="text-900 font-medium text-xl">{{ monitor }}</div>
+          </div>
+          <div class="flex align-items-center justify-content-center bg-cyan-100 border-round" style="width: 2.5rem; height: 2.5rem">
+            <i class="pi pi-chart-line text-cyan-500 text-xl"></i>
+          </div>
+        </div>
+        <span class="text-green-500 font-medium">+ 1% </span>
+        <span class="text-500">since last</span>
+      </div>
+    </div>
+    <div class="col-12 lg:col-6 xl:col-4">
+      <div class="card mb-0">
+        <div class="flex justify-content-between mb-3">
+          <div>
+            <span class="block text-500 font-medium mb-3">Patience</span>
+            <div class="text-900 font-medium text-xl">{{ patience }}</div>
+          </div>
+          <div class="flex align-items-center justify-content-center bg-cyan-100 border-round" style="width: 2.5rem; height: 2.5rem">
+            <i class="pi pi-chart-line text-cyan-500 text-xl"></i>
+          </div>
+        </div>
+        <span class="text-green-500 font-medium">+ 1% </span>
+        <span class="text-500">since last</span>
+      </div>
+    </div>
+    <div class="col-12 lg:col-6 xl:col-4">
+      <div class="card mb-0">
+        <div class="flex justify-content-between mb-3">
+          <div>
+            <span class="block text-500 font-medium mb-3">Optimizer</span>
+            <div class="text-900 font-medium text-xl">{{ optimizerName }}</div>
+          </div>
+          <div class="flex align-items-center justify-content-center bg-cyan-100 border-round" style="width: 2.5rem; height: 2.5rem">
+            <i class="pi pi-chart-line text-cyan-500 text-xl"></i>
+          </div>
+        </div>
+        <span class="text-green-500 font-medium">+ 1% </span>
+        <span class="text-500">since last</span>
+      </div>
+    </div>
+    <div class="col-12 lg:col-6 xl:col-4">
+      <div class="card mb-0">
+        <div class="flex justify-content-between mb-3">
+          <div>
+            <span class="block text-500 font-medium mb-3">Optimizer Learning Rate</span>
+            <div class="text-900 font-medium text-xl">{{ optimizerLearningRate }}</div>
+          </div>
+          <div class="flex align-items-center justify-content-center bg-cyan-100 border-round" style="width: 2.5rem; height: 2.5rem">
+            <i class="pi pi-chart-line text-cyan-500 text-xl"></i>
+          </div>
+        </div>
+        <span class="text-green-500 font-medium">+ 1% </span>
+        <span class="text-500">since last</span>
+      </div>
+    </div>
+    <div class="col-12 lg:col-6 xl:col-4">
+      <div class="card mb-0">
+        <div class="flex justify-content-between mb-3">
+          <div>
+            <span class="block text-500 font-medium mb-3">Restore Best Weights</span>
+            <div class="text-900 font-medium text-xl">{{ restoreBestWeights }}</div>
+          </div>
+          <div class="flex align-items-center justify-content-center bg-cyan-100 border-round" style="width: 2.5rem; height: 2.5rem">
+            <i class="pi pi-chart-line text-cyan-500 text-xl"></i>
+          </div>
+        </div>
+        <span class="text-green-500 font-medium">+ 1% </span>
+        <span class="text-500">since last</span>
+      </div>
+    </div>
+  </div>
 </template>
+<script setup>
+import { onMounted, ref } from 'vue';
+import axios from "axios";
+import { useToast } from "primevue/usetoast";
 
-<style scoped lang="scss">
+const toast = useToast();
 
-</style>
+const isLoading = ref(false);
+const locations = ref([
+  { name: 'Ljubljana - Koper', value: 'LJ_KP' },
+  { name: 'Koper - Ljubljana', value: 'KP_LJ' },
+  { name: 'Maribor - Ljubljana', value: 'MB_LJ' },
+  { name: 'Ljubljana - Maribor', value: 'LJ_MB' },
+  { name: 'Ljubljana - Karavanke', value: 'LJ_Karavanke' },
+  { name: 'Karavanke - Ljubljana', value: 'Karavanke_LJ' },
+  { name: 'LJ obv. zunanji krog', value: 'LJ_obv_zunanji_krog' },
+  { name: 'LJ obv. notranji krog', value: 'LJ_obv_notranji_krog' },
+  { name: 'Ljubljana MP Obrežje', value: 'LJ_MP_Obrezje' },
+  { name: 'MP Obrežje - Ljubljana', value: 'MP_Obrezje_LJ' }
+]);
+const selectedLocation = ref(null);
+
+const epochs = ref('N/A');
+const validationSplit = ref('N/A');
+const monitor = ref('N/A');
+const patience = ref('N/A');
+const optimizerName = ref('N/A');
+const optimizerLearningRate = ref('N/A');
+const restoreBestWeights = ref('N/A');
+
+onMounted(() => {
+  selectedLocation.value = locations.value[0];
+  fetchTravelTimeModelInfo(selectedLocation.value.value);
+});
+
+const onLocationSelected = () => {
+  fetchTravelTimeModelInfo(selectedLocation.value.value);
+};
+
+const fetchTravelTimeModelInfo = async (locationName) => {
+  try {
+    isLoading.value = true;
+
+    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/travel-times/model-data/${locationName}`)
+    if (!response.data) {
+      isLoading.value = false;
+      toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })
+      return
+    }
+
+    epochs.value = response.data.data.params.epochs;
+    validationSplit.value = response.data.data.params.validation_split;
+    monitor.value = response.data.data.params.monitor;
+    patience.value = response.data.data.params.patience;
+    optimizerName.value = response.data.data.params.opt_name;
+    optimizerLearningRate.value = parseFloat(response.data.data.params.opt_learning_rate).toFixed(4);
+    restoreBestWeights.value = response.data.data.params.restore_best_weights;
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })
+  } finally {
+    isLoading.value = false;
+  }
+};
+</script>

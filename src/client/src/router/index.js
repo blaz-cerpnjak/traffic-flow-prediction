@@ -14,6 +14,12 @@ const router = createRouter({
                     component: () => import('@/views/pages/travel_times/TravelTimes.vue')
                 },
                 {
+                    path: '/travelTimes/:locationName',
+                    name: 'travelTimeDetails',
+                    component: () => import('@/views/pages/travel_times/TravelTimeDetails.vue'),
+                    props: true
+                },
+                {
                     path: '/modelMetrics',
                     name: 'modelMetrics',
                     component: () => import('@/views/pages/travel_times/model-metrics/ModelMetrics.vue')
@@ -21,7 +27,7 @@ const router = createRouter({
                 {
                     path: '/modelInfo',
                     name: 'modelInfo',
-                    component: () => import('@/views/pages/travel_times/model-metrics/ModelMetrics.vue')
+                    component: () => import('@/views/pages/travel_times/model-info/ModelInfo.vue')
                 }
             ]
         },
