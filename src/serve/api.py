@@ -3,10 +3,11 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from src.serve.utils import models_service
+from src.serve.utils import models_service, mlflow_service
 from src.serve.utils.predict_travel_times_service import predict_travel_time
 from src.utils.locations import LOCATIONS, LOCATION_NAMES
 import onnx
+import math
 
 scalers = {}
 
@@ -26,9 +27,6 @@ async def ping():
 
 @app.get("/travel-times/predict/{location_name}")
 async def predict_travel_times_service(location_name: str):
-    if location_name not in models:
-        raise HTTPException(status_code=404, detail="Location not found")
-
     if location_name not in scalers:
         raise HTTPException(status_code=404, detail="Location not found")
 
@@ -52,6 +50,15 @@ async def predict_travel_times_service():
             continue
 
         prediction = predict_travel_time(f'{location_name}_model.onnx', model_scalers, location_name)
+        if math.isnan(prediction[0][0]):
+            predictions.append({
+                'location': location_name,
+                'destination': destination,
+                'minutes': 'N/A',
+                'status': 'N/A'
+            })
+            continue
+
         traffic_status = 'HIGH TRAFFIC' if prediction > 150 else 'MEDIUM TRAFFIC' if prediction > 100 else 'LOW TRAFFIC'
         
         destination = LOCATION_NAMES[location_name]
@@ -66,6 +73,16 @@ async def predict_travel_times_service():
         })
 
     return {'predictions': predictions}
+
+@app.get("/travel-times/model-data/{location_name}")
+async def predict_travel_times_service(location_name):
+    run_id = mlflow_service.get_latest_travel_time_production_model_run_id(location_name)
+    if run_id is None:
+        raise HTTPException(status_code=404, detail="Model data not found")
+    
+    model_data = mlflow_service.get_model_data(run_id)
+    return {'data': model_data}
+
 
 def load_production_models():
     print("Loading production models...")
