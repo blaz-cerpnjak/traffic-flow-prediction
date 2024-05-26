@@ -8,7 +8,7 @@ from src.serve.utils.predict_travel_times_service import predict_travel_times_fo
 from src.serve.utils.predict_vehicle_counters_service import predict_vehicle_count_for_next_hours
 from src.utils.locations import LOCATIONS, LOCATION_NAMES
 import onnx
-import math
+import joblib
 
 scalers = {}
 
@@ -67,22 +67,44 @@ async def predict_travel_times_service(location_name):
 
 @app.get("/vehicle-counter/predict/{location_name}/{direction}/{hours}")
 async def predict_vehicle_counter_service(location_name: str, direction: str, hours: int):
+    if not os.path.exists(location_name):
+        os.makedirs(location_name)
+    
+    if not os.path.exists(f'{location_name}/{direction}'):
+        os.makedirs(f'{location_name}/{direction}')
+
     model_path = f'{location_name}_{direction}_vehicle_counter_model.onnx'
 
-    # Load model if not exist
-    #if os.path.exists(model_path) is False:
-    run_id = mlflow_service.get_latest_vehicle_counter_production_model_run_id(location_name, direction)
-    if run_id is None:
-        raise HTTPException(status_code=404, detail="Model data not found")
-    
-    model, _scalers = models_service.fetch_current_vehicle_counter_model(location_name, direction)
-    onnx.save(model, f'{location_name}_{direction}_vehicle_counter_model.onnx')
+    # Check if the model file exists
+    if not os.path.exists(model_path):
+        run_id = mlflow_service.get_latest_vehicle_counter_production_model_run_id(location_name, direction)
+        if run_id is None:
+            raise HTTPException(status_code=404, detail="Model data not found")
+        
+        model, scalers = models_service.fetch_current_vehicle_counter_model(location_name, direction)
+        number_of_vehicle_right_lane_scaler = scalers['number_of_vehicles_right_lane_scaler']
+        apparent_temperature_scaler = scalers['apparent_temperature_scaler']
 
-    model = onnx.load(model_path)
+        # save scalers
+        with open(f'{location_name}/{direction}/number_of_vehicles_right_lane_scaler.joblib', 'wb') as f:
+            joblib.dump(number_of_vehicle_right_lane_scaler, f)
+
+        with open(f'{location_name}/{direction}/apparent_temperature_scaler.joblib', 'wb') as f:
+            joblib.dump(apparent_temperature_scaler, f)
+
+        # Save the model to a local file
+        onnx.save_model(model, model_path)
+
+    my_scalers = {}
+    with open(f'{location_name}/{direction}/number_of_vehicles_right_lane_scaler.joblib', 'rb') as f:
+        my_scalers['number_of_vehicles_right_lane_scaler'] = joblib.load(f)
+
+    with open(f'{location_name}/{direction}/apparent_temperature_scaler.joblib', 'rb') as f:
+        my_scalers['apparent_temperature_scaler'] = joblib.load(f)
 
     predictions = predict_vehicle_count_for_next_hours(
         f'{location_name}_{direction}_vehicle_counter_model.onnx', 
-        _scalers, 
+        my_scalers, 
         location_name, 
         direction, 
         hours

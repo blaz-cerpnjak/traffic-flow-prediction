@@ -85,27 +85,19 @@ def fetch_current_vehicle_counter_model(location_name, direction):
     run_id = latest_production_models[0].run_id
 
     # Download the scalers
-    local_path = client.download_artifacts(run_id, "number_of_vehicles_left_lane_scaler.joblib", ".")
-    number_of_vehicles_left_lane_scaler = joblib.load(local_path)
-
     local_path = client.download_artifacts(run_id, "number_of_vehicles_right_lane_scaler.joblib", ".")
     number_of_vehicles_right_lane_scaler = joblib.load(local_path)
 
-    local_path = client.download_artifacts(run_id, "speed_left_lane_scaler.joblib", ".")
-    speed_left_lane_scaler = joblib.load(local_path)
+    local_path = client.download_artifacts(run_id, "apparent_temperature_scaler.joblib", ".")
+    apparent_temperature_scaler = joblib.load(local_path)
 
-    local_path = client.download_artifacts(run_id, "speed_right_lane_scaler.joblib", ".")
-    speed_right_lane_scaler = joblib.load(local_path)
-
-    if number_of_vehicles_left_lane_scaler is None or number_of_vehicles_right_lane_scaler is None or speed_left_lane_scaler is None or speed_right_lane_scaler is None:
+    if number_of_vehicles_right_lane_scaler is None or apparent_temperature_scaler is None:
         print(f"Scalers not found for {location_name} - {direction}")
         return None, None
     
     scalers = {
-        "number_of_vehicles_left_lane_scaler": number_of_vehicles_left_lane_scaler,
         "number_of_vehicles_right_lane_scaler": number_of_vehicles_right_lane_scaler,
-        "speed_left_lane_scaler": speed_left_lane_scaler,
-        "speed_right_lane_scaler": speed_right_lane_scaler
+        "apparent_temperature_scaler": apparent_temperature_scaler,
     }
 
     return model, scalers
