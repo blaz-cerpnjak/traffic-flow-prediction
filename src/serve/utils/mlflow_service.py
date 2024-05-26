@@ -21,6 +21,7 @@ def get_latest_vehicle_counter_production_model_run_id(location_name, direction)
     if (len(latest_production_models) <= 0):
         return None
     
+    print(latest_production_models[0].run_id)
     return latest_production_models[0].run_id
 
 def get_model_data(run_id):

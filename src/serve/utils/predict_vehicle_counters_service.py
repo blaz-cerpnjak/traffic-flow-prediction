@@ -41,17 +41,13 @@ def predict_vehicle_count(model_path, scalers, location_name, direction, df):
     """
     Returns number of vehicles prediction for next hour at the given `location_name` location and `destination` destination.
     """
-    number_of_vehicle_left_lane_scaler = scalers['number_of_vehicles_left_lane_scaler']
+    apparent_temperature_scaler = scalers['apparent_temperature_scaler']
     number_of_vehicle_right_lane_scaler = scalers['number_of_vehicles_right_lane_scaler']
-    speed_left_lane_scaler = scalers['speed_left_lane_scaler']
-    speed_right_lane_scaler = scalers['speed_right_lane_scaler']
-
-    df['number_of_vehicles_left_lane'] = number_of_vehicle_left_lane_scaler.transform(df['number_of_vehicles_left_lane'].values.reshape(-1, 1))
+    
     df['number_of_vehicles_right_lane'] = number_of_vehicle_right_lane_scaler.transform(df['number_of_vehicles_right_lane'].values.reshape(-1, 1))
-    df['speed_left_lane'] = speed_left_lane_scaler.transform(df['speed_left_lane'].values.reshape(-1, 1))
-    df['speed_right_lane'] = speed_right_lane_scaler.transform(df['speed_right_lane'].values.reshape(-1, 1))
+    df['apparent_temperature'] = apparent_temperature_scaler.transform(df['apparent_temperature'].values.reshape(-1, 1))
 
-    features = [ 'speed_left_lane', 'speed_right_lane', 'number_of_vehicles_left_lane', 'number_of_vehicles_right_lane']
+    features = ['apparent_temperature', 'number_of_vehicles_right_lane']
     X = df[features]
     X_reshaped = np.reshape(X, (1, len(features), 24))
 
@@ -70,16 +66,12 @@ def predict_vehicle_count_for_next_hours(model_path, scalers, location_name, dir
     """
     predictions_by_hour = {}
 
-    number_of_vehicle_left_lane_scaler = scalers['number_of_vehicles_left_lane_scaler']
     number_of_vehicle_right_lane_scaler = scalers['number_of_vehicles_right_lane_scaler']
-    speed_left_lane_scaler = scalers['speed_left_lane_scaler']
-    speed_right_lane_scaler = scalers['speed_right_lane_scaler']
+    apparent_temperature_scaler = scalers['apparent_temperature_scaler']
 
     df = get_last_window(location_name, direction)
-    df['number_of_vehicles_left_lane'] = number_of_vehicle_left_lane_scaler.transform(df['number_of_vehicles_left_lane'].values.reshape(-1, 1))
     df['number_of_vehicles_right_lane'] = number_of_vehicle_right_lane_scaler.transform(df['number_of_vehicles_right_lane'].values.reshape(-1, 1))
-    df['speed_left_lane'] = speed_left_lane_scaler.transform(df['speed_left_lane'].values.reshape(-1, 1))
-    df['speed_right_lane'] = speed_right_lane_scaler.transform(df['speed_right_lane'].values.reshape(-1, 1))
+    df['apparent_temperature'] = apparent_temperature_scaler.transform(df['apparent_temperature'].values.reshape(-1, 1))
 
     prediction = predict_vehicle_count(model_path, scalers, location_name, direction, df)
     if math.isnan(prediction[0][0]):
@@ -94,35 +86,29 @@ def predict_vehicle_count_for_next_hours(model_path, scalers, location_name, dir
     prediction_item = {}
     prediction_item['location_name'] = location_name
     prediction_item['datetime'] = datetime_utc.strftime("%Y-%m-%d %H:%M:%S")
-    prediction_item['number_of_vehicles_left_lane'] = int(prediction[0][0])
     prediction_item['number_of_vehicles_right_lane'] = int(prediction[0][0])
-    prediction_item['speed_left_lane'] = df.iloc[-1]['speed_left_lane']
-    prediction_item['speed_right_lane'] = df.iloc[-1]['speed_right_lane']
 
     predictions_by_hour.append(prediction_item)
 
-    save_prediction_to_mongodb(datetime_utc, location_name, direction, df, int(prediction[0][0]))
+    # save_prediction_to_mongodb(datetime_utc, location_name, direction, df, int(prediction[0][0]))
 
     if hours > 0:
         for _ in range(hours):
             datetime_utc = datetime_utc + pd.Timedelta(hours=1)
-            #weather_data = weather_service.fetch_weather_data(datetime_utc, latitude, longitude)
+            weather_data = weather_service.fetch_weather_data(datetime_utc, latitude, longitude)
+            apparent_temperature = weather_data['apparent_temperature']
 
             new_row = {
                 'datetime': datetime_utc,
                 'latitude': latitude,
                 'longitude': longitude,
-                'number_of_vehicles_right_lane': prediction[0][0],
-                'number_of_vehicles_left_lane': prediction[0][0],
-                'speed_right_lane': df.iloc[-1]['speed_right_lane'],
-                'speed_left_lane': df.iloc[-1]['speed_left_lane'],
+                'number_of_vehicles_right_lane': int(prediction[0][0]),
+                'apparent_temperature': apparent_temperature,
             }
 
             new_row = pd.DataFrame([new_row])
-            new_row['number_of_vehicles_left_lane'] = number_of_vehicle_left_lane_scaler.transform(new_row['number_of_vehicles_left_lane'].values.reshape(-1, 1))
             new_row['number_of_vehicles_right_lane'] = number_of_vehicle_right_lane_scaler.transform(new_row['number_of_vehicles_right_lane'].values.reshape(-1, 1))
-            new_row['speed_left_lane'] = speed_left_lane_scaler.transform(new_row['speed_left_lane'].values.reshape(-1, 1))
-            new_row['speed_right_lane'] = speed_right_lane_scaler.transform(new_row['speed_right_lane'].values.reshape(-1, 1))
+            new_row['apparent_temperature'] = apparent_temperature_scaler.transform(new_row['apparent_temperature'].values.reshape(-1, 1))
 
             df = df.iloc[1:]
             df = pd.concat([df, new_row], ignore_index=True)
@@ -132,10 +118,7 @@ def predict_vehicle_count_for_next_hours(model_path, scalers, location_name, dir
             prediction_item = {}
             prediction_item['location_name'] = location_name
             prediction_item['datetime'] = datetime_utc.strftime("%Y-%m-%d %H:%M:%S")
-            prediction_item['number_of_vehicles_left_lane'] = int(prediction[0][0])
             prediction_item['number_of_vehicles_right_lane'] = int(prediction[0][0])
-            prediction_item['speed_left_lane'] = df.iloc[-1]['speed_left_lane']
-            prediction_item['speed_right_lane'] = df.iloc[-1]['speed_right_lane']
 
             predictions_by_hour.append(prediction_item)
 

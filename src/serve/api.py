@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from src.serve.utils import models_service, mlflow_service
 from src.serve.utils.predict_travel_times_service import predict_travel_times_for_next_hours
+from src.serve.utils.predict_vehicle_counters_service import predict_vehicle_count_for_next_hours
 from src.utils.locations import LOCATIONS, LOCATION_NAMES
 import onnx
 import math
@@ -66,18 +67,29 @@ async def predict_travel_times_service(location_name):
 
 @app.get("/vehicle-counter/predict/{location_name}/{direction}/{hours}")
 async def predict_vehicle_counter_service(location_name: str, direction: str, hours: int):
-    model_path = f'{location_name}_{direction}_model.onnx'
+    model_path = f'{location_name}_{direction}_vehicle_counter_model.onnx'
 
     # Load model if not exist
-    if os.path.exists(model_path) is False:
-        run_id = mlflow_service.get_latest_vehicle_counter_production_model_run_id(location_name, direction)
-        if run_id is None:
-            raise HTTPException(status_code=404, detail="Model data not found")
-        
-        model, scalers[location_name][direction] = models_service.fetch_current_vehicle_counter_model(location_name, direction)
-        onnx.save(model, f'{location_name}_{direction}_vehicle_counter_model.onnx')
+    #if os.path.exists(model_path) is False:
+    run_id = mlflow_service.get_latest_vehicle_counter_production_model_run_id(location_name, direction)
+    if run_id is None:
+        raise HTTPException(status_code=404, detail="Model data not found")
+    
+    model, _scalers = models_service.fetch_current_vehicle_counter_model(location_name, direction)
+    onnx.save(model, f'{location_name}_{direction}_vehicle_counter_model.onnx')
 
     model = onnx.load(model_path)
+
+    predictions = predict_vehicle_count_for_next_hours(
+        f'{location_name}_{direction}_vehicle_counter_model.onnx', 
+        _scalers, 
+        location_name, 
+        direction, 
+        hours
+    )
+
+    print(predictions)
+    return {'predictions': predictions}
 
 def load_production_models():
     print("Loading production models...")

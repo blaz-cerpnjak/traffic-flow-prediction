@@ -11,7 +11,7 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 
-def save_prediction_to_mongodb(datetime_utc, location_name, destination, input_data, prediction):
+def save_prediction_to_mongodb(datetime_utc, location_name, destination, df_input, prediction):
     """
     Saves the given prediction with input data to MongoDB.
     """
@@ -24,7 +24,7 @@ def save_prediction_to_mongodb(datetime_utc, location_name, destination, input_d
         "datetime": datetime_utc,
         "location_name": location_name,
         "destination": destination, 
-        "input_data": input_data,
+        "input_data": df_input.to_dict(orient='records'),
         "prediction": prediction
     }
 
@@ -94,7 +94,7 @@ def predict_travel_times_for_next_hours(model_path, scalers, location_name, hour
     prediction_item['traffic_status'] = 'HIGH TRAFFIC' if prediction > 150 else 'MEDIUM TRAFFIC' if prediction > 100 else 'LOW TRAFFIC'
     predictions_by_hour.append(prediction_item)
 
-    save_prediction_to_mongodb(datetime_utc, location_name, destination, df, int(prediction[0][0]))
+    # save_prediction_to_mongodb(datetime_utc, location_name, destination, df, int(prediction[0][0]))
 
     if hours > 0:
         for _ in range(hours):
