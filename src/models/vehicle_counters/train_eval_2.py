@@ -46,7 +46,7 @@ class CreateSequencesTransformer(BaseEstimator, TransformerMixin):
             y.append(data.iloc[i + self.window_size - 1, -1])  # -1 is the last target column (PM10)
         return np.array(X), np.array(y)
 
-def create_gru_model(input_shape, num_features=2):
+def create_gru_model(input_shape):
     inputs = layers.Input(shape=input_shape)
     x = layers.GRU(64, return_sequences=True)(inputs)
     x = layers.GRU(32)(x)
@@ -57,7 +57,7 @@ def create_gru_model(input_shape, num_features=2):
     return model
 
 def train_and_evaluate(train_df, test_df, location_name, direction, model_name):
-    features = ['speed_left_lane', 'speed_right_lane', 'number_of_vehicles_left_lane', 'number_of_vehicles_right_lane'] 
+    features = ['apparent_temperature', 'number_of_vehicles_right_lane'] 
     target = ['number_of_vehicles_right_lane']
 
     train_df = train_df[features]
