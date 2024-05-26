@@ -177,7 +177,41 @@ def train_and_evaluate(train_df, test_df, location_name, direction, model_name):
     mlflow.onnx.log_model(onnx_model, logged_model_name)
 
     # Register model as production if it is better than the current production model
-    #register_model(logged_model_name, mae, mse, ev)
+    register_model(logged_model_name, mae, mse, ev)
+    return
+
+def register_model(logged_model_name, mae, mse, ev):
+    client = MlflowClient()
+
+    # Register model
+    new_model_uri = f"runs:/{mlflow.active_run().info.run_id}/{logged_model_name}"
+    new_registered_model = mlflow.register_model(new_model_uri, f'{logged_model_name}')
+
+    # Check if the new model is better than the current production model
+    latest_production_models = client.get_latest_versions(logged_model_name, stages=["Production"])
+
+    if (len(latest_production_models) > 0):
+        run = mlflow.get_run(latest_production_models[0].run_id)
+
+        if (mae > run.data.metrics["MAE"]) or (mse > run.data.metrics["MSE"]) or (ev < run.data.metrics["EV"]):
+            print(f"New model is not better than the current production model. Keeping the current production model...")
+            return
+
+        print(f"New model is better than the current production model. Transitioning to production...")
+
+        # Archive the current production model
+        client.transition_model_version_stage(
+            name=logged_model_name,
+            version=latest_production_models[0].version,
+            stage="archived",
+        )
+
+    # Promote the new model to production
+    client.transition_model_version_stage(
+        name=logged_model_name,
+        version=new_registered_model.version,
+        stage="production",
+    )
     return
 
 if __name__ == '__main__':
