@@ -52,31 +52,6 @@ async def predict_travel_times_service():
 
         prediction = predict_travel_times_for_next_hours(f'{location_name}_model.onnx', model_scalers, location_name, 0)
         predictions.append(prediction)
-        """
-        if math.isnan(prediction[0][0]):
-            predictions.append({
-                'location': location_name,
-                'destination': destination,
-                'minutes': 'N/A',
-                'status': 'N/A'
-            })
-            continue
-        """
-
-        #traffic_status = 'HIGH TRAFFIC' if prediction > 150 else 'MEDIUM TRAFFIC' if prediction > 100 else 'LOW TRAFFIC'
-        
-        #destination = LOCATION_NAMES[location_name]
-        #if destination is None:
-        #    destination = "Uknown"
-
-        """
-        predictions.append({
-            'location': location_name,
-            'destination': destination,
-            'minutes': int(prediction[0][0]),
-            'status': traffic_status
-        })
-        """
 
     return {'predictions': predictions}
 
@@ -89,6 +64,20 @@ async def predict_travel_times_service(location_name):
     model_data = mlflow_service.get_model_data(run_id)
     return {'data': model_data}
 
+@app.get("/vehicle-counter/predict/{location_name}/{direction}/{hours}")
+async def predict_vehicle_counter_service(location_name: str, direction: str, hours: int):
+    model_path = f'{location_name}_{direction}_model.onnx'
+
+    # Load model if not exist
+    if os.path.exists(model_path) is False:
+        run_id = mlflow_service.get_latest_vehicle_counter_production_model_run_id(location_name, direction)
+        if run_id is None:
+            raise HTTPException(status_code=404, detail="Model data not found")
+        
+        model, scalers[location_name][direction] = models_service.fetch_current_vehicle_counter_model(location_name, direction)
+        onnx.save(model, f'{location_name}_{direction}_vehicle_counter_model.onnx')
+
+    model = onnx.load(model_path)
 
 def load_production_models():
     print("Loading production models...")

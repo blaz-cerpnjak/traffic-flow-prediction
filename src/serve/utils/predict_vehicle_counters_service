@@ -1,0 +1,142 @@
+import sys
+sys.path.append("../../../")
+import pandas as pd
+import numpy as np
+import onnxruntime as rt
+from src.data.scrapers import travel_time_scraper
+from src.data.weather import fetch_weather_data as weather_service
+from src.utils.locations import LOCATIONS, LOCATION_NAMES
+import math
+from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
+
+def save_prediction_to_mongodb(datetime_utc, location_name, destination, input_data, prediction):
+    """
+    Saves the given prediction with input data to MongoDB.
+    """
+    load_dotenv()
+    client = MongoClient(os.getenv("MONGO_URI"))
+    db = client["traffic_flow_predictions"]
+    collection = db["vehicle_counter_predictions"]
+
+    item = {
+        "datetime": datetime_utc,
+        "location_name": location_name,
+        "destination": destination, 
+        "input_data": input_data,
+        "prediction": prediction
+    }
+
+    collection.insert_one(item)
+    return
+
+def get_last_window(location_name, direction, window_size=24):
+    # TODO: load from mongodb
+    df = pd.read_csv(f'../../data/vehicle_counters/processed/{location_name}/{direction}/data.csv')
+    df = df.tail(window_size)
+    return df
+
+def predict_vehicle_count(model_path, scalers, location_name, direction, df):
+    """
+    Returns number of vehicles prediction for next hour at the given `location_name` location and `destination` destination.
+    """
+    number_of_vehicle_left_lane_scaler = scalers['number_of_vehicles_left_lane_scaler']
+    number_of_vehicle_right_lane_scaler = scalers['number_of_vehicles_right_lane_scaler']
+    speed_left_lane_scaler = scalers['speed_left_lane_scaler']
+    speed_right_lane_scaler = scalers['speed_right_lane_scaler']
+
+    df['number_of_vehicles_left_lane'] = number_of_vehicle_left_lane_scaler.transform(df['number_of_vehicles_left_lane'].values.reshape(-1, 1))
+    df['number_of_vehicles_right_lane'] = number_of_vehicle_right_lane_scaler.transform(df['number_of_vehicles_right_lane'].values.reshape(-1, 1))
+    df['speed_left_lane'] = speed_left_lane_scaler.transform(df['speed_left_lane'].values.reshape(-1, 1))
+    df['speed_right_lane'] = speed_right_lane_scaler.transform(df['speed_right_lane'].values.reshape(-1, 1))
+
+    features = [ 'speed_left_lane', 'speed_right_lane', 'number_of_vehicles_left_lane', 'number_of_vehicles_right_lane']
+    X = df[features]
+    X_reshaped = np.reshape(X, (1, len(features), 24))
+
+    sess = rt.InferenceSession(model_path)
+    input_name = sess.get_inputs()[0].name
+    onnx_predictions = sess.run(None, {input_name: X_reshaped.astype(np.float32)})
+    onnx_predictions = onnx_predictions[0]  # Select the first element (prediction)
+    onnx_predictions = onnx_predictions.reshape(1, -1)
+    inverse_transformed = number_of_vehicle_right_lane_scaler.inverse_transform(onnx_predictions)
+    
+    return inverse_transformed
+
+def predict_vehicle_count_for_next_hours(model_path, scalers, location_name, direction, hours):
+    """
+    Returns predictions for the next `hours` hours at the given location and direction.
+    """
+    predictions_by_hour = {}
+
+    number_of_vehicle_left_lane_scaler = scalers['number_of_vehicles_left_lane_scaler']
+    number_of_vehicle_right_lane_scaler = scalers['number_of_vehicles_right_lane_scaler']
+    speed_left_lane_scaler = scalers['speed_left_lane_scaler']
+    speed_right_lane_scaler = scalers['speed_right_lane_scaler']
+
+    df = get_last_window(location_name, direction)
+    df['number_of_vehicles_left_lane'] = number_of_vehicle_left_lane_scaler.transform(df['number_of_vehicles_left_lane'].values.reshape(-1, 1))
+    df['number_of_vehicles_right_lane'] = number_of_vehicle_right_lane_scaler.transform(df['number_of_vehicles_right_lane'].values.reshape(-1, 1))
+    df['speed_left_lane'] = speed_left_lane_scaler.transform(df['speed_left_lane'].values.reshape(-1, 1))
+    df['speed_right_lane'] = speed_right_lane_scaler.transform(df['speed_right_lane'].values.reshape(-1, 1))
+
+    prediction = predict_vehicle_count(model_path, scalers, location_name, direction, df)
+    if math.isnan(prediction[0][0]):
+        return None
+
+    latitude = df.iloc[-1]['latitude']
+    longitude = df.iloc[-1]['longitude']
+    datetime_utc = pd.to_datetime(df.iloc[-1]['datetime'])
+
+    predictions_by_hour = []
+
+    prediction_item = {}
+    prediction_item['location_name'] = location_name
+    prediction_item['datetime'] = datetime_utc.strftime("%Y-%m-%d %H:%M:%S")
+    prediction_item['number_of_vehicles_left_lane'] = int(prediction[0][0])
+    prediction_item['number_of_vehicles_right_lane'] = int(prediction[0][0])
+    prediction_item['speed_left_lane'] = df.iloc[-1]['speed_left_lane']
+    prediction_item['speed_right_lane'] = df.iloc[-1]['speed_right_lane']
+
+    predictions_by_hour.append(prediction_item)
+
+    save_prediction_to_mongodb(datetime_utc, location_name, direction, df, int(prediction[0][0]))
+
+    if hours > 0:
+        for _ in range(hours):
+            datetime_utc = datetime_utc + pd.Timedelta(hours=1)
+            #weather_data = weather_service.fetch_weather_data(datetime_utc, latitude, longitude)
+
+            new_row = {
+                'datetime': datetime_utc,
+                'latitude': latitude,
+                'longitude': longitude,
+                'number_of_vehicles_right_lane': prediction[0][0],
+                'number_of_vehicles_left_lane': prediction[0][0],
+                'speed_right_lane': df.iloc[-1]['speed_right_lane'],
+                'speed_left_lane': df.iloc[-1]['speed_left_lane'],
+            }
+
+            new_row = pd.DataFrame([new_row])
+            new_row['number_of_vehicles_left_lane'] = number_of_vehicle_left_lane_scaler.transform(new_row['number_of_vehicles_left_lane'].values.reshape(-1, 1))
+            new_row['number_of_vehicles_right_lane'] = number_of_vehicle_right_lane_scaler.transform(new_row['number_of_vehicles_right_lane'].values.reshape(-1, 1))
+            new_row['speed_left_lane'] = speed_left_lane_scaler.transform(new_row['speed_left_lane'].values.reshape(-1, 1))
+            new_row['speed_right_lane'] = speed_right_lane_scaler.transform(new_row['speed_right_lane'].values.reshape(-1, 1))
+
+            df = df.iloc[1:]
+            df = pd.concat([df, new_row], ignore_index=True)
+
+            prediction = predict_vehicle_count(model_path, scalers, location_name, direction, df)
+
+            prediction_item = {}
+            prediction_item['location_name'] = location_name
+            prediction_item['datetime'] = datetime_utc.strftime("%Y-%m-%d %H:%M:%S")
+            prediction_item['number_of_vehicles_left_lane'] = int(prediction[0][0])
+            prediction_item['number_of_vehicles_right_lane'] = int(prediction[0][0])
+            prediction_item['speed_left_lane'] = df.iloc[-1]['speed_left_lane']
+            prediction_item['speed_right_lane'] = df.iloc[-1]['speed_right_lane']
+
+            predictions_by_hour.append(prediction_item)
+
+    return predictions_by_hour
