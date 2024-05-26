@@ -23,6 +23,8 @@ import joblib
 import mlflow
 from dotenv import load_dotenv
 from mlflow.tracking import MlflowClient
+from onnxruntime.quantization import quantize_dynamic, QuantType
+import onnxoptimizer
 
 PROCESSED_DATA_DIR = '../../../data/travel_times/processed'
 REPORTS_DIR = '../../../reports/travel_times'
@@ -137,12 +139,32 @@ def train_and_evaluate(train_df, test_df, location_name, model_name):
     plt.savefig(f'{REPORTS_DIR}/{location_name}/figures/{model_name}_predictions.png')
     mlflow.log_artifact(f'{REPORTS_DIR}/{location_name}/figures/{model_name}_predictions.png')
     
-    #Convert to onnx
+    # Convert to onnx
     onnx_model, _ = tf2onnx.convert.from_keras(model, input_signature=[tf.TensorSpec(shape=(None, len(features), window_size), dtype=tf.float32)])
+    model_path = f'{MODELS_DIR}/{location_name}/model.onnx'
+    onnx.save_model(onnx_model, model_path)
+
+    passes = [
+        "eliminate_deadend",
+        "eliminate_identity",
+        "eliminate_nop_dropout",
+        "eliminate_nop_monotone_argmax",
+        "eliminate_nop_pad",
+        "eliminate_unused_initializer"
+    ]
+    optimized_model = onnxoptimizer.optimize(onnx_model, passes)
+    optimized_model_path = f'{MODELS_DIR}/{location_name}/optimized_model.onnx'
+    onnx.save_model(optimized_model, optimized_model_path)
+
+    # Quantize the model
+    quantized_model_path = f'{MODELS_DIR}/{location_name}/quantized_model.onnx'
+    quantize_dynamic(optimized_model_path, quantized_model_path, weight_type=QuantType.QInt8)
+
+    # Log the model to mlflow
     logged_model_name = f'{location_name}_travel_time_onnx_model'
     mlflow.onnx.log_model(onnx_model, logged_model_name)
 
-    # Register model
+    # Register model as production if it is better than the current production model
     register_model(logged_model_name, mae, mse, ev)
     return
 
@@ -232,29 +254,29 @@ def create_lstm_model(input_shape):
 if __name__ == '__main__':
     load_dotenv()
 
-    for location_name in os.listdir(PROCESSED_DATA_DIR):
-        #location_name = "LJ_KP"
-        print(f"Processing {location_name} data...")
+    #for location_name in os.listdir(PROCESSED_DATA_DIR):
+    location_name = "LJ_KP"
+    print(f"Processing {location_name} data...")
 
-        location_path = os.path.join(PROCESSED_DATA_DIR, location_name)
+    location_path = os.path.join(PROCESSED_DATA_DIR, location_name)
 
-        if os.path.isdir(location_path):
-            train_csv_path = os.path.join(location_path, 'train.csv')
-            test_csv_path = os.path.join(location_path, 'test.csv')
-            
-            if os.path.exists(train_csv_path) and os.path.exists(test_csv_path):
-                train_df = pd.read_csv(train_csv_path)
-                test_df = pd.read_csv(test_csv_path)
+    if os.path.isdir(location_path):
+        train_csv_path = os.path.join(location_path, 'train.csv')
+        test_csv_path = os.path.join(location_path, 'test.csv')
+        
+        if os.path.exists(train_csv_path) and os.path.exists(test_csv_path):
+            train_df = pd.read_csv(train_csv_path)
+            test_df = pd.read_csv(test_csv_path)
 
-                print(os.getenv('MLFLOW_TRACKING_URI'))
+            print(os.getenv('MLFLOW_TRACKING_URI'))
 
-                mlflow.set_tracking_uri(os.getenv('MLFLOW_TRACKING_URI'))
-                mlflow.environment_variables.MLFLOW_TRACKING_USERNAME = os.getenv('MLFLOW_TRACKING_USERNAME')
-                mlflow.environment_variables.MLFLOW_TRACKING_PASSWORD = os.getenv('MLFLOW_TRACKING_PASSWORD')
-                mlflow.tensorflow.autolog()
-                mlflow.set_experiment(f"{location_name}_travel_time_prediction")
-                mlflow.start_run()
+            mlflow.set_tracking_uri(os.getenv('MLFLOW_TRACKING_URI'))
+            mlflow.environment_variables.MLFLOW_TRACKING_USERNAME = os.getenv('MLFLOW_TRACKING_USERNAME')
+            mlflow.environment_variables.MLFLOW_TRACKING_PASSWORD = os.getenv('MLFLOW_TRACKING_PASSWORD')
+            mlflow.tensorflow.autolog()
+            mlflow.set_experiment(f"{location_name}_travel_time_prediction")
+            mlflow.start_run()
 
-                train_and_evaluate(train_df, test_df, location_name, "gru")
+            train_and_evaluate(train_df, test_df, location_name, "gru")
 
-                mlflow.end_run()
+            mlflow.end_run()
