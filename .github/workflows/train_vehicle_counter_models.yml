@@ -44,5 +44,5 @@ jobs:
 
       - name: Train models
         run: |
-          cd src/models/vehicle_counter
+          cd src/models/vehicle_counters
           poetry run python -m train_eval_2
