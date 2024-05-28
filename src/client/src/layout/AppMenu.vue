@@ -15,9 +15,9 @@ const model = ref([
     {
       label: 'Traffic Density',
       items: [
-        { label: 'Predictions', icon: 'pi pi-fw pi-car', to: '/trafficDensity' },
-        { label: 'Model Metrics', icon: 'pi pi-fw pi-chart-bar', to: '/trafficDensityModelMetrics' },
-        { label: 'Other Model Info', icon: 'pi pi-fw pi-info-circle', to: '/trafficDensityModelInfo' }
+        { label: 'Predictions', icon: 'pi pi-fw pi-car', to: '/traffic-density' },
+        { label: 'Model Metrics', icon: 'pi pi-fw pi-chart-bar', to: '/traffic-density-model-metrics' },
+        { label: 'Other Model Info', icon: 'pi pi-fw pi-info-circle', to: '/traffic-density-model-info' }
       ]
     },
     {

@@ -30,9 +30,19 @@ const router = createRouter({
                     component: () => import('@/views/pages/travel_times/model-info/ModelInfo.vue')
                 },
                 {
-                    path: '/trafficDensity',
+                    path: '/traffic-density',
                     name: 'trafficDensity',
                     component: () => import('@/views/pages/traffic-density/TrafficDensity.vue')
+                },
+                {
+                    path: '/traffic-density-model-metrics',
+                    name: 'trafficDensityModelMetrics',
+                    component: () => import('@/views/pages/traffic-density/model-metrics/ModelMetrics.vue')
+                },
+                {
+                    path: '/traffic-density-model-info',
+                    name: 'trafficDensityModelInfo',
+                    component: () => import('@/views/pages/traffic-density/model-info/ModelInfo.vue')
                 }
             ]
         },
