@@ -28,6 +28,11 @@ const router = createRouter({
                     path: '/modelInfo',
                     name: 'modelInfo',
                     component: () => import('@/views/pages/travel_times/model-info/ModelInfo.vue')
+                },
+                {
+                    path: '/trafficDensity',
+                    name: 'trafficDensity',
+                    component: () => import('@/views/pages/traffic-density/TrafficDensity.vue')
                 }
             ]
         },

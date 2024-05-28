@@ -13,6 +13,14 @@ const model = ref([
         ]
     },
     {
+      label: 'Traffic Density',
+      items: [
+        { label: 'Predictions', icon: 'pi pi-fw pi-car', to: '/trafficDensity' },
+        { label: 'Model Metrics', icon: 'pi pi-fw pi-chart-bar', to: '/trafficDensityModelMetrics' },
+        { label: 'Other Model Info', icon: 'pi pi-fw pi-info-circle', to: '/trafficDensityModelInfo' }
+      ]
+    },
+    {
         label: 'Pages',
         icon: 'pi pi-fw pi-briefcase',
         to: '/pages',

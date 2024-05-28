@@ -89,7 +89,6 @@ const fetchPredictions = async (locationName, hours) => {
 }
 
 const onHoursToPredictChanged = async () => {
-  console.log('Hours to predict changed to', hoursToPredict.value)
   fetchPredictions(locationName.value, hoursToPredict.value);
 }
 
