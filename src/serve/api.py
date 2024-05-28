@@ -68,7 +68,7 @@ async def predict_travel_times_service(location_name):
 @app.get("/vehicle-counter/routes")
 async def get_vehicle_counter_routes():
     routes = []
-    
+
     for location, directions in HIGHWAY_LOCATIONS.items():
         for direction, value in directions.items():
             print(f'location: "{location}", direction: "{direction}", value: "{value}",')
@@ -79,6 +79,15 @@ async def get_vehicle_counter_routes():
             })
 
     return {'routes': routes}
+
+@app.get("/vehicle-counter/model-data/{location_name}/{direction}")
+async def predict_travel_times_service(location_name: str, direction: str):
+    run_id = mlflow_service.get_latest_vehicle_counter_production_model_run_id(location_name, direction)
+    if run_id is None:
+        raise HTTPException(status_code=404, detail="Model data not found")
+    
+    model_data = mlflow_service.get_model_data(run_id)
+    return {'data': model_data}
 
 @app.get("/vehicle-counter/predict/{location_name}/{direction}/{hours}")
 async def predict_vehicle_counter_service(location_name: str, direction: str, hours: int):
