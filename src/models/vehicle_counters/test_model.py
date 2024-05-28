@@ -5,18 +5,19 @@ import pandas as pd
 import joblib
 import os
 
+
 # Get last 25 rows from df. 24 are used for input, 1 for target
-df = pd.read_csv("data/vehicle_counters/processed/malecnik_ac/direction_mb/data.csv")
+df = pd.read_csv("data/vehicle_counters/processed/lopata_ac/direction_mb/data.csv")
 df = df.tail(25)
 last_row = df.tail(1)
 print(f'To predict: {last_row["number_of_vehicles_right_lane"]}')
 df = df.head(24)
 
 # Scale the input
-left_lane_scaler = joblib.load("models/vehicle_counters/malecnik_ac/direction_mb/scalers/number_of_vehicles_left_lane_scaler.joblib")
-right_lane_scaler = joblib.load("models/vehicle_counters/malecnik_ac/direction_mb/scalers/number_of_vehicles_right_lane_scaler.joblib")
-speed_left_lane_scaler = joblib.load("models/vehicle_counters/malecnik_ac/direction_mb/scalers/speed_left_lane_scaler.joblib")
-speed_right_lane_scaler = joblib.load("models/vehicle_counters/malecnik_ac/direction_mb/scalers/speed_right_lane_scaler.joblib")
+left_lane_scaler = joblib.load("models/vehicle_counters/lopata_ac/direction_mb/scalers/number_of_vehicles_left_lane_scaler.joblib")
+right_lane_scaler = joblib.load("models/vehicle_counters/lopata_ac/direction_mb/scalers/number_of_vehicles_right_lane_scaler.joblib")
+speed_left_lane_scaler = joblib.load("models/vehicle_counters/lopata_ac/direction_mb/scalers/speed_left_lane_scaler.joblib")
+speed_right_lane_scaler = joblib.load("models/vehicle_counters/lopata_ac/direction_mb/scalers/speed_right_lane_scaler.joblib")
 
 df['number_of_vehicles_left_lane'] = left_lane_scaler.transform(df['number_of_vehicles_left_lane'].values.reshape(-1, 1))
 df['number_of_vehicles_right_lane'] = right_lane_scaler.transform(df['number_of_vehicles_right_lane'].values.reshape(-1, 1))
@@ -34,9 +35,9 @@ X_reshaped = np.reshape(X, (1, len(features), 24))
 #print(f"Keras prediction: {keras_prediction}")
 
 ### ONNX ###
-print(f"ONNX model size: {os.path.getsize('models/vehicle_counters/malecnik_ac/direction_mb/model.onnx')} bytes")
+print(f"ONNX model size: {os.path.getsize('models/vehicle_counters/lopata_ac/direction_mb/model.onnx')} bytes")
 
-sess = rt.InferenceSession(f'models/vehicle_counters/malecnik_ac/direction_mb/model.onnx')
+sess = rt.InferenceSession(f'models/vehicle_counters/lopata_ac/direction_mb/model.onnx')
 
 input_name = sess.get_inputs()[0].name
 onnx_predictions = sess.run(None, {input_name: X_reshaped.astype(np.float32)})

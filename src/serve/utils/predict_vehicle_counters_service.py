@@ -5,7 +5,7 @@ import numpy as np
 import onnxruntime as rt
 from src.data.scrapers import travel_time_scraper
 from src.data.weather import fetch_weather_data as weather_service
-from src.utils.locations import LOCATIONS, LOCATION_NAMES
+from src.utils.locations import LOCATIONS, LOCATION_NAMES, HIGHWAY_LOCATIONS
 import math
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -41,11 +41,7 @@ def predict_vehicle_count(model_path, scalers, location_name, direction, df):
     """
     Returns number of vehicles prediction for next hour at the given `location_name` location and `destination` destination.
     """
-    apparent_temperature_scaler = scalers['apparent_temperature_scaler']
     number_of_vehicle_right_lane_scaler = scalers['number_of_vehicles_right_lane_scaler']
-    
-    df['number_of_vehicles_right_lane'] = number_of_vehicle_right_lane_scaler.transform(df['number_of_vehicles_right_lane'].values.reshape(-1, 1))
-    df['apparent_temperature'] = apparent_temperature_scaler.transform(df['apparent_temperature'].values.reshape(-1, 1))
 
     features = ['apparent_temperature', 'number_of_vehicles_right_lane']
     X = df[features]
@@ -59,6 +55,9 @@ def predict_vehicle_count(model_path, scalers, location_name, direction, df):
     inverse_transformed = number_of_vehicle_right_lane_scaler.inverse_transform(onnx_predictions)
     
     return inverse_transformed
+
+# Cached weather predictions
+weather_predictions = {}
 
 def predict_vehicle_count_for_next_hours(model_path, scalers, location_name, direction, hours):
     """
@@ -84,7 +83,8 @@ def predict_vehicle_count_for_next_hours(model_path, scalers, location_name, dir
     predictions_by_hour = []
 
     prediction_item = {}
-    prediction_item['location_name'] = location_name
+    prediction_item['location'] = location_name
+    prediction_item['route'] = HIGHWAY_LOCATIONS[location_name][direction]
     prediction_item['datetime'] = datetime_utc.strftime("%Y-%m-%d %H:%M:%S")
     prediction_item['number_of_vehicles_right_lane'] = int(prediction[0][0])
 
@@ -95,7 +95,19 @@ def predict_vehicle_count_for_next_hours(model_path, scalers, location_name, dir
     if hours > 0:
         for _ in range(hours):
             datetime_utc = datetime_utc + pd.Timedelta(hours=1)
-            weather_data = weather_service.fetch_weather_data(datetime_utc, latitude, longitude)
+
+            if location_name not in weather_predictions:
+                weather_data = weather_service.fetch_weather_data(datetime_utc, latitude, longitude)
+                weather_predictions[location_name] = { datetime_utc.day : weather_data }
+                print("location_name not in weather_predictions")
+            elif datetime_utc.day not in weather_predictions[location_name]:
+                weather_data = weather_service.fetch_weather_data(datetime_utc, latitude, longitude)
+                weather_predictions[location_name][datetime_utc.day] = weather_data
+                print("datetime_utc not in weather_predictions")
+            else:
+                weather_data = weather_predictions[location_name][datetime_utc.day]
+                print("weather_data from cache")
+
             apparent_temperature = weather_data['apparent_temperature']
 
             new_row = {
@@ -117,6 +129,7 @@ def predict_vehicle_count_for_next_hours(model_path, scalers, location_name, dir
 
             prediction_item = {}
             prediction_item['location_name'] = location_name
+            prediction_item['route'] = HIGHWAY_LOCATIONS[location_name][direction]
             prediction_item['datetime'] = datetime_utc.strftime("%Y-%m-%d %H:%M:%S")
             prediction_item['number_of_vehicles_right_lane'] = int(prediction[0][0])
 

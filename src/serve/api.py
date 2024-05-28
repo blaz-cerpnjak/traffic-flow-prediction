@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.serve.utils import models_service, mlflow_service
 from src.serve.utils.predict_travel_times_service import predict_travel_times_for_next_hours
 from src.serve.utils.predict_vehicle_counters_service import predict_vehicle_count_for_next_hours
-from src.utils.locations import LOCATIONS, LOCATION_NAMES
+from src.utils.locations import LOCATIONS, HIGHWAY_LOCATIONS
 import onnx
 import joblib
 
@@ -64,6 +64,21 @@ async def predict_travel_times_service(location_name):
     
     model_data = mlflow_service.get_model_data(run_id)
     return {'data': model_data}
+
+@app.get("/vehicle-counter/routes")
+async def get_vehicle_counter_routes():
+    routes = []
+    
+    for location, directions in HIGHWAY_LOCATIONS.items():
+        for direction, value in directions.items():
+            print(f'location: "{location}", direction: "{direction}", value: "{value}",')
+            routes.append({
+                'location': location,
+                'direction': direction,
+                'value': value
+            })
+
+    return {'routes': routes}
 
 @app.get("/vehicle-counter/predict/{location_name}/{direction}/{hours}")
 async def predict_vehicle_counter_service(location_name: str, direction: str, hours: int):
