@@ -11,23 +11,23 @@ const router = createRouter({
                 {
                     path: '/',
                     name: 'travelTimes',
-                    component: () => import('@/views/pages/travel_times/TravelTimes.vue')
+                    component: () => import('@/views/pages/travel-times/TravelTimes.vue')
                 },
                 {
                     path: '/travelTimes/:locationName',
                     name: 'travelTimeDetails',
-                    component: () => import('@/views/pages/travel_times/TravelTimeDetails.vue'),
+                    component: () => import('@/views/pages/travel-times/TravelTimeDetails.vue'),
                     props: true
                 },
                 {
                     path: '/modelMetrics',
                     name: 'modelMetrics',
-                    component: () => import('@/views/pages/travel_times/model-metrics/ModelMetrics.vue')
+                    component: () => import('@/views/pages/travel-times/model-metrics/ModelMetrics.vue')
                 },
                 {
                     path: '/modelInfo',
                     name: 'modelInfo',
-                    component: () => import('@/views/pages/travel_times/model-info/ModelInfo.vue')
+                    component: () => import('@/views/pages/travel-times/model-info/ModelInfo.vue')
                 },
                 {
                     path: '/traffic-density',
@@ -43,7 +43,24 @@ const router = createRouter({
                     path: '/traffic-density-model-info',
                     name: 'trafficDensityModelInfo',
                     component: () => import('@/views/pages/traffic-density/model-info/ModelInfo.vue')
-                }
+                },
+                {
+                    path: '/model-experiments',
+                    name: 'modelExperiments',
+                    component: () => import('@/views/pages/model-experiments/ModelExperiments.vue')
+                },
+                {
+                    path: '/model-experiments/:experimentId',
+                    name: 'modelExperimentDetails',
+                    component: () => import('@/views/pages/model-experiments/ModelExperimentDetails.vue'),
+                    props: true
+                },
+                {
+                    path: '/model-details/:modelName',
+                    name: 'modelDetails',
+                    component: () => import('@/views/pages/model-experiments/ModelDetails.vue'),
+                    props: true
+                },
             ]
         },
         {

@@ -17,68 +17,15 @@ const model = ref([
       items: [
         { label: 'Predictions', icon: 'pi pi-fw pi-car', to: '/traffic-density' },
         { label: 'Model Metrics', icon: 'pi pi-fw pi-chart-bar', to: '/traffic-density-model-metrics' },
-        { label: 'Other Model Info', icon: 'pi pi-fw pi-info-circle', to: '/traffic-density-model-info' }
+        { label: 'Other Model Info', icon: 'pi pi-fw pi-info-circle', to: '/traffic-density-model-info' },
       ]
     },
-    {
-        label: 'Pages',
-        icon: 'pi pi-fw pi-briefcase',
-        to: '/pages',
-        items: [
-            {
-                label: 'Auth',
-                icon: 'pi pi-fw pi-user',
-                items: [
-                    {
-                        label: 'Login',
-                        icon: 'pi pi-fw pi-sign-in',
-                        to: '/auth/login'
-                    },
-                    {
-                        label: 'Error',
-                        icon: 'pi pi-fw pi-times-circle',
-                        to: '/auth/error'
-                    },
-                    {
-                        label: 'Access Denied',
-                        icon: 'pi pi-fw pi-lock',
-                        to: '/auth/access'
-                    }
-                ]
-            },
-            {
-                label: 'Not Found',
-                icon: 'pi pi-fw pi-exclamation-circle',
-                to: '/pages/notfound'
-            },
-            {
-                label: 'Empty',
-                icon: 'pi pi-fw pi-circle-off',
-                to: '/pages/empty'
-            }
-        ]
-    },
-    {
-        label: 'Get Started',
-        items: [
-            {
-                label: 'Documentation',
-                icon: 'pi pi-fw pi-question',
-                to: '/documentation'
-            },
-            {
-                label: 'View Source',
-                icon: 'pi pi-fw pi-search',
-                url: 'https://github.com/primefaces/sakai-vue',
-                target: '_blank'
-            },
-            {
-                label: 'Nuxt Version',
-                url: 'https://github.com/primefaces/sakai-nuxt',
-                icon: 'pi pi-fw pi-star'
-            }
-        ]
-    }
+  {
+    label: 'Experiments',
+    items: [
+        { label: 'Experiments', icon: 'pi pi-fw pi-chart-bar', to: '/model-experiments' }
+    ]
+  }
 ]);
 </script>
 
