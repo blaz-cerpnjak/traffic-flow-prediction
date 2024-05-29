@@ -3,13 +3,14 @@ sys.path.append("../../../")
 import pandas as pd
 import numpy as np
 import onnxruntime as rt
-from src.data.scrapers import travel_time_scraper
 from src.data.weather import fetch_weather_data as weather_service
 from src.utils.locations import LOCATIONS, LOCATION_NAMES
 import math
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
+import src.serve.utils.db_service as db_service
+
 
 def save_prediction_to_mongodb(datetime_utc, location_name, destination, df_input, prediction):
     """
@@ -30,12 +31,6 @@ def save_prediction_to_mongodb(datetime_utc, location_name, destination, df_inpu
 
     collection.insert_one(item)
     return
-
-def get_last_window(location_name, window_size=24):
-    # TODO: load from mongodb
-    df = pd.read_csv(f'../../data/travel_times/processed/{location_name}/data.csv')
-    df = df.tail(window_size)
-    return df
 
 def predict_travel_time(model_path, scalers, location_name, df):
     """
@@ -69,7 +64,7 @@ def predict_travel_times_for_next_hours(model_path, scalers, location_name, hour
     temperature_scaler = scalers['apparent_temperature_scaler']
     minutes_scaler = scalers['minutes_scaler']
 
-    df = get_last_window(location_name)
+    df = db_service.get_last_travel_times_window(location_name, window_size=24)
     df['apparent_temperature'] = temperature_scaler.transform(df['apparent_temperature'].values.reshape(-1, 1))
     df['minutes'] = minutes_scaler.transform(df['minutes'].values.reshape(-1, 1))
 
