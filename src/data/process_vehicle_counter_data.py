@@ -2,6 +2,7 @@ import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 import pandas as pd
+import src.serve.utils.db_service as db_service
 
 raw_data_dir = 'data/vehicle_counters/raw'
 processed_data_dir = 'data/vehicle_counters/processed'
@@ -30,6 +31,9 @@ for folder in os.listdir(raw_data_dir):
                     merged_df = pd.concat([travel_times_df, weather_data_df], axis=1)
                     merged_output_path = os.path.join(processed_subfolder_path, 'data.csv')
                     merged_df.to_csv(merged_output_path, index=False)
+
+                    last_row = merged_df.tail(1)
+                    db_service.save_to_collection('vehicle_counter_history', last_row)
                     
                     # Determine the split index for an 80-20 train-test split
                     split_index = int(len(merged_df) * 0.8)

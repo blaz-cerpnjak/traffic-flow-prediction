@@ -137,6 +137,11 @@ async def predict_vehicle_counter_service(location_name: str, direction: str, ho
     print(predictions)
     return {'predictions': predictions}
 
+@app.get("/models")
+async def get_models():
+    models = models_service.get_all_models()
+    return {'models': models}
+
 def load_production_models():
     print("Loading production models...")
     for location_name in LOCATIONS.keys():
