@@ -32,9 +32,11 @@ for folder in os.listdir(raw_data_dir):
                     merged_output_path = os.path.join(processed_subfolder_path, 'data.csv')
                     merged_df.to_csv(merged_output_path, index=False)
 
-                    last_row = merged_df.tail(1)
+                    # Save new row to MongoDB
+                    last_row = merged_df.iloc[-1].copy()
+                    last_row['direction'] = subfolder
                     db_service.save_to_collection('vehicle_counter_history', last_row)
-                    
+
                     # Determine the split index for an 80-20 train-test split
                     split_index = int(len(merged_df) * 0.8)
 
