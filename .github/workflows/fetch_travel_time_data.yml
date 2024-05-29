@@ -15,6 +15,10 @@ jobs:
     permissions:
       contents: write
 
+    env:
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      MONGO_DB_NAME: ${{ secrets.MONGO_DB_NAME }}  
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
