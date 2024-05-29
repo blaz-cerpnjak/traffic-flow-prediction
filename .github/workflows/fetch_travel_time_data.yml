@@ -27,7 +27,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: python -m pip install selenium requests pandas dvc[s3] pymongo
+        run: python -m pip install selenium requests pandas dvc[s3] pymongo python-dotenv
 
       - name: Authenticate dvc remote
         run: |
