@@ -9,6 +9,8 @@ from src.serve.utils.predict_vehicle_counters_service import predict_vehicle_cou
 from src.utils.locations import LOCATIONS, HIGHWAY_LOCATIONS
 import onnx
 import joblib
+from pydantic import BaseModel
+from typing import Optional
 
 scalers = {}
 
@@ -137,10 +139,32 @@ async def predict_vehicle_counter_service(location_name: str, direction: str, ho
     print(predictions)
     return {'predictions': predictions}
 
-@app.get("/models")
-async def get_models():
-    models = models_service.get_all_models()
+class ExperimentSearchRequest(BaseModel):
+    type: str
+    name: Optional[str] = None
+
+@app.post("/vehicle-counter/search-experiments")
+async def search_experiments(request: ExperimentSearchRequest):
+    experiments = mlflow_service.search_experiments(int(request.type), request.name)
+    return {'experiments': experiments}
+
+@app.get("/vehicle-counter/runs/{experiment_id}")
+async def get_runs_by_experiment_id(experiment_id: int):
+    runs = mlflow_service.get_runs_by_experiment_id(experiment_id)
+    return {'runs': runs}
+
+class ModelSearchRequest(BaseModel):
+    name: Optional[str] = None
+
+@app.post("/models")
+async def get_registered_models(request: ModelSearchRequest):
+    models = mlflow_service.get_registered_models(request.name)
     return {'models': models}
+
+@app.get("/models/{model_name}")
+def get_model_versions_by_name(model_name):
+    model_versions = mlflow_service.get_model_version_by_name(model_name)
+    return model_versions
 
 def load_production_models():
     print("Loading production models...")

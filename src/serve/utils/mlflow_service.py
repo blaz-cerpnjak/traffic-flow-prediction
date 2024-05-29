@@ -29,6 +29,44 @@ def get_model_data(run_id):
     data = client.get_run(run_id).data
     return data
 
+"""
+def get_metric_history(run_id, metric):
+    client = MlflowClient()
+    history = client.get_metric_history(run_id, metric)
+    return history
+"""
+
+def search_experiments(view_type: int = 1, name: str = None):
+    """
+    Type: 1 = Active, 2 = Deleted, 3 = All
+    """
+    client = MlflowClient()
+    
+    if (name is not None):
+        experiments = client.search_experiments(view_type=view_type, filter_string=f"name LIKE '%{name}%'")
+    else:
+        experiments = client.search_experiments(view_type=view_type)
+    
+    return experiments
+
+def get_runs_by_experiment_id(experiment_id):
+    client = MlflowClient()
+    runs = client.search_runs(experiment_ids=[experiment_id])
+    return runs
+
+def get_registered_models(name: None,):
+    client = MlflowClient()
+
+    query = ""
+    if name is not None:
+        query = f"name LIKE '%{name}%'"
+
+    return client.search_registered_models(filter_string=query)
+
+def get_model_version_by_name(name):
+    client = MlflowClient()
+    return client.search_model_versions(f"name LIKE '%{name}%'")
+
 if __name__ == "__main__":
     location_name = "LJ_KP"
     run_id = get_latest_travel_time_production_model_run_id(location_name)
