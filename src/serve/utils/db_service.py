@@ -71,3 +71,28 @@ def save_travel_time_prediction(datetime_utc, location_name, destination, df_inp
         "prediction": prediction
     })
     return
+
+def save_vehicle_counter_prediction(datetime_utc, location_name, direction, df_input, prediction):
+    """
+    Saves the given prediction with input data to MongoDB.
+    """
+    db = get_db_client()
+    existing_predictions = db['vehicle_counter_predictions'].find({'location_name': location_name, 'direction': direction, 'datetime': datetime_utc})
+    count = sum(1 for _ in existing_predictions)
+
+    if existing_predictions is not None and count > 0:
+        # Update the existing prediction
+        print("Updating existing prediction")
+        db['vehicle_counter_predictions'].update_one({'location_name': location_name, 'direction': direction, 'datetime': datetime_utc}, {'$set': {'prediction': prediction}})
+        return
+
+    print("Saving new prediction")
+
+    db['vehicle_counter_predictions'].insert_one({
+        "datetime": datetime_utc,
+        "location_name": location_name,
+        "direction": direction,
+        "input_data": df_input.to_dict(orient='records'),
+        "prediction": prediction
+    })
+    return

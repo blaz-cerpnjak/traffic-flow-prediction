@@ -8,36 +8,12 @@ from src.utils.locations import LOCATION_NAMES
 import math
 import src.serve.utils.db_service as db_service
 import threading
-from datetime import timedelta
 
 def predict_travel_time(model_path, scalers, datetime_utc, location_name, df):
     """
     Returns travel time (minutes) prediction for next hour at the given `location_name` location.
     """
-
-    db = db_service.get_db_client()
-    
-    # Truncate to the start of the hour
-    #start_of_hour = datetime_utc.replace(minute=0, second=0, microsecond=0)
-    #end_of_hour = start_of_hour + timedelta(hours=1)
-
-    # Find the existing prediction within that hour range
-    #existing_prediction = db['travel_time_predictions'].find_one({
-    #    'location_name': location_name,
-    #    'datetime': { '$gte': start_of_hour, '$lt': end_of_hour }
-    #})
-
-    #if existing_prediction is not None:
-    #    print("Existing prediction found")
-    #    print(existing_prediction)
-    #    return existing_prediction['prediction']
-
-    #temperature_scaler = scalers['apparent_temperature_scaler']
     minutes_scaler = scalers['minutes_scaler']
-
-    #df = get_last_window(location_name)
-    #df['apparent_temperature'] = temperature_scaler.transform(df['apparent_temperature'].values.reshape(-1, 1))
-    #df['minutes'] = minutes_scaler.transform(df['minutes'].values.reshape(-1, 1))
 
     features = ['apparent_temperature', 'minutes']
     X = df[features]
@@ -94,8 +70,6 @@ def predict_travel_times_for_next_hours(model_path, scalers, location_name, hour
     prediction_item['minutes'] = int(prediction)
     prediction_item['traffic_status'] = 'HIGH TRAFFIC' if prediction > 150 else 'MEDIUM TRAFFIC' if prediction > 100 else 'LOW TRAFFIC'
     predictions_by_hour.append(prediction_item)
-
-    #db_service.save_travel_time_prediction(datetime_utc, location_name, destination, df, int(prediction[0][0]))
 
     if hours > 0:
         for _ in range(hours):

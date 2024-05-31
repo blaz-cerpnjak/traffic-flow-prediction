@@ -3,13 +3,14 @@ sys.path.append("../../../")
 import pandas as pd
 import numpy as np
 import onnxruntime as rt
-from src.data.scrapers import travel_time_scraper
 from src.data.weather import fetch_weather_data as weather_service
-from src.utils.locations import LOCATIONS, LOCATION_NAMES, HIGHWAY_LOCATIONS
+from src.utils.locations import LOCATION_NAMES, HIGHWAY_LOCATIONS
 import math
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
+import threading
+import src.serve.utils.db_service as db_service
 
 def save_prediction_to_mongodb(datetime_utc, location_name, destination, input_data, prediction):
     """
@@ -37,7 +38,7 @@ def get_last_window(location_name, direction, window_size=24):
     df = df.tail(window_size)
     return df
 
-def predict_vehicle_count(model_path, scalers, location_name, direction, df):
+def predict_vehicle_count(model_path, scalers, datetime_utc, location_name, direction, df):
     """
     Returns number of vehicles prediction for next hour at the given `location_name` location and `destination` destination.
     """
@@ -53,8 +54,14 @@ def predict_vehicle_count(model_path, scalers, location_name, direction, df):
     onnx_predictions = onnx_predictions[0]  # Select the first element (prediction)
     onnx_predictions = onnx_predictions.reshape(1, -1)
     inverse_transformed = number_of_vehicle_right_lane_scaler.inverse_transform(onnx_predictions)
+    prediction = inverse_transformed[0][0]
     
-    return inverse_transformed
+    threading.Thread(target=save_vehicle_counter_prediction, args=(location_name, datetime_utc, direction, df, prediction)).start()
+
+    return prediction
+
+def save_vehicle_counter_prediction(location_name, datetime_utc, direction, df, prediction):
+    db_service.save_vehicle_counter_prediction(datetime_utc, location_name, direction, df, int(prediction))
 
 # Cached weather predictions
 weather_predictions = {}
@@ -72,13 +79,13 @@ def predict_vehicle_count_for_next_hours(model_path, scalers, location_name, dir
     df['number_of_vehicles_right_lane'] = number_of_vehicle_right_lane_scaler.transform(df['number_of_vehicles_right_lane'].values.reshape(-1, 1))
     df['apparent_temperature'] = apparent_temperature_scaler.transform(df['apparent_temperature'].values.reshape(-1, 1))
 
-    prediction = predict_vehicle_count(model_path, scalers, location_name, direction, df)
-    if math.isnan(prediction[0][0]):
-        return None
-
     latitude = df.iloc[-1]['latitude']
     longitude = df.iloc[-1]['longitude']
     datetime_utc = pd.to_datetime(df.iloc[-1]['datetime'])
+
+    prediction = predict_vehicle_count(model_path, scalers, datetime_utc, location_name, direction, df)
+    if math.isnan(prediction):
+        return None
 
     predictions_by_hour = []
 
@@ -86,11 +93,9 @@ def predict_vehicle_count_for_next_hours(model_path, scalers, location_name, dir
     prediction_item['location'] = location_name
     prediction_item['route'] = HIGHWAY_LOCATIONS[location_name][direction]
     prediction_item['datetime'] = datetime_utc.strftime("%Y-%m-%d %H:%M:%S")
-    prediction_item['number_of_vehicles_right_lane'] = int(prediction[0][0])
+    prediction_item['number_of_vehicles_right_lane'] = int(prediction)
 
     predictions_by_hour.append(prediction_item)
-
-    # save_prediction_to_mongodb(datetime_utc, location_name, direction, df, int(prediction[0][0]))
 
     if hours > 0:
         for _ in range(hours):
@@ -114,7 +119,7 @@ def predict_vehicle_count_for_next_hours(model_path, scalers, location_name, dir
                 'datetime': datetime_utc,
                 'latitude': latitude,
                 'longitude': longitude,
-                'number_of_vehicles_right_lane': int(prediction[0][0]),
+                'number_of_vehicles_right_lane': int(prediction),
                 'apparent_temperature': apparent_temperature,
             }
 
@@ -125,13 +130,13 @@ def predict_vehicle_count_for_next_hours(model_path, scalers, location_name, dir
             df = df.iloc[1:]
             df = pd.concat([df, new_row], ignore_index=True)
 
-            prediction = predict_vehicle_count(model_path, scalers, location_name, direction, df)
+            prediction = predict_vehicle_count(model_path, scalers, datetime_utc, location_name, direction, df)
 
             prediction_item = {}
             prediction_item['location_name'] = location_name
             prediction_item['route'] = HIGHWAY_LOCATIONS[location_name][direction]
             prediction_item['datetime'] = datetime_utc.strftime("%Y-%m-%d %H:%M:%S")
-            prediction_item['number_of_vehicles_right_lane'] = int(prediction[0][0])
+            prediction_item['number_of_vehicles_right_lane'] = int(prediction)
 
             predictions_by_hour.append(prediction_item)
 
