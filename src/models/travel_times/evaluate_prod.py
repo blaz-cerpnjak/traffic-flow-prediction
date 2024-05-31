@@ -20,7 +20,7 @@ def get_actual_travel_times(datetime_utc=datetime.now(timezone.utc)):
     }
 
     db = db_service.get_db_client()
-    results = db['travel_time_history'].find()
+    results = db['travel_time_history'].find().sort("datetime", 1)
 
     return results
 
@@ -39,7 +39,7 @@ def get_travel_time_predictions(datetime_utc=datetime.now(timezone.utc)):
     }
 
     db = db_service.get_db_client()
-    results = db['travel_time_predictions'].find(query)
+    results = db['travel_time_predictions'].find(query).sort("datetime", 1)
     return results
 
 def evaluate_predictions(actual_by_location, predictions_by_location):
