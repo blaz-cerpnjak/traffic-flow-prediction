@@ -51,6 +51,9 @@ def evaluate_predictions(actual_by_location, predictions_by_location):
     mse_by_location = {}
     ev_by_location = {}
 
+    db = db_service.get_db_client()
+    datetime_now = datetime.now(timezone.utc)
+
     for location in actual_by_location.keys():
         actual_values = actual_by_location[location]
         predictions = predictions_by_location[location]
@@ -58,6 +61,16 @@ def evaluate_predictions(actual_by_location, predictions_by_location):
         mae = mean_absolute_error(actual_values, predictions)
         mse = mean_squared_error(actual_values, predictions)
         ev = explained_variance_score(actual_values, predictions)
+
+        db['travel_time_evaluation'].insert_one({
+            'datetime': datetime_now,
+            'location': location,
+            'actual_values': actual_values,
+            'predictions': predictions,
+            'mae': mae,
+            'mse': mse,
+            'ev': ev
+        })
 
         mae_by_location[location] = mae
         mse_by_location[location] = mse
