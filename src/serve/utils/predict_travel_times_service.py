@@ -4,38 +4,34 @@ import pandas as pd
 import numpy as np
 import onnxruntime as rt
 from src.data.weather import fetch_weather_data as weather_service
-from src.utils.locations import LOCATIONS, LOCATION_NAMES
+from src.utils.locations import LOCATION_NAMES
 import math
-from pymongo import MongoClient
-from dotenv import load_dotenv
-import os
 import src.serve.utils.db_service as db_service
+import threading
+from datetime import timedelta
 
-
-def save_prediction_to_mongodb(datetime_utc, location_name, destination, df_input, prediction):
-    """
-    Saves the given prediction with input data to MongoDB.
-    """
-    load_dotenv()
-    client = MongoClient(os.getenv("MONGO_URI"))    
-    db = client["traffic_flow_predictions"]
-    collection = db["travel_time_predictions"]
-
-    item = {
-        "datetime": datetime_utc,
-        "location_name": location_name,
-        "destination": destination, 
-        "input_data": df_input.to_dict(orient='records'),
-        "prediction": prediction
-    }
-
-    collection.insert_one(item)
-    return
-
-def predict_travel_time(model_path, scalers, location_name, df):
+def predict_travel_time(model_path, scalers, datetime_utc, location_name, df):
     """
     Returns travel time (minutes) prediction for next hour at the given `location_name` location.
     """
+
+    db = db_service.get_db_client()
+    
+    # Truncate to the start of the hour
+    #start_of_hour = datetime_utc.replace(minute=0, second=0, microsecond=0)
+    #end_of_hour = start_of_hour + timedelta(hours=1)
+
+    # Find the existing prediction within that hour range
+    #existing_prediction = db['travel_time_predictions'].find_one({
+    #    'location_name': location_name,
+    #    'datetime': { '$gte': start_of_hour, '$lt': end_of_hour }
+    #})
+
+    #if existing_prediction is not None:
+    #    print("Existing prediction found")
+    #    print(existing_prediction)
+    #    return existing_prediction['prediction']
+
     #temperature_scaler = scalers['apparent_temperature_scaler']
     minutes_scaler = scalers['minutes_scaler']
 
@@ -53,8 +49,14 @@ def predict_travel_time(model_path, scalers, location_name, df):
     onnx_predictions = onnx_predictions[0]  # Select the first element (prediction)
     onnx_predictions = onnx_predictions.reshape(1, -1)
     inverse_transformed = minutes_scaler.inverse_transform(onnx_predictions)
+    prediction = inverse_transformed[0][0]
     
-    return inverse_transformed
+    threading.Thread(target=save_travel_time_prediction, args=(location_name, datetime_utc, LOCATION_NAMES[location_name], df, prediction)).start()
+
+    return prediction
+
+def save_travel_time_prediction(location_name, datetime_utc, destination, df, prediction):
+    db_service.save_travel_time_prediction(datetime_utc, location_name, destination, df, int(prediction))
 
 def predict_travel_times_for_next_hours(model_path, scalers, location_name, hours):
     """
@@ -68,32 +70,37 @@ def predict_travel_times_for_next_hours(model_path, scalers, location_name, hour
     df['apparent_temperature'] = temperature_scaler.transform(df['apparent_temperature'].values.reshape(-1, 1))
     df['minutes'] = minutes_scaler.transform(df['minutes'].values.reshape(-1, 1))
 
-    prediction = predict_travel_time(model_path, scalers, location_name, df)
-    if math.isnan(prediction[0][0]):
-        return None
-    
     destination = LOCATION_NAMES[location_name]
     if destination is None:
         destination = "Unknown"
 
     latitude = df.iloc[-1]['latitude']
     longitude = df.iloc[-1]['longitude']
+
     datetime_utc = pd.to_datetime(df.iloc[-1]['datetime'])
+    print("Last datetime_utc: ", datetime_utc)
+    datetime_utc = datetime_utc + pd.Timedelta(hours=1)
+    print(datetime_utc)
+
+    prediction = predict_travel_time(model_path, scalers, datetime_utc, location_name, df)
+    if math.isnan(prediction):
+        return None
 
     predictions_by_hour = []
     prediction_item = {}
     prediction_item['location'] = location_name
     prediction_item['destination'] = destination
     prediction_item['datetime'] = datetime_utc.strftime("%Y-%m-%d %H:%M:%S")
-    prediction_item['minutes'] = int(prediction[0][0])
+    prediction_item['minutes'] = int(prediction)
     prediction_item['traffic_status'] = 'HIGH TRAFFIC' if prediction > 150 else 'MEDIUM TRAFFIC' if prediction > 100 else 'LOW TRAFFIC'
     predictions_by_hour.append(prediction_item)
 
-    # save_prediction_to_mongodb(datetime_utc, location_name, destination, df, int(prediction[0][0]))
+    #db_service.save_travel_time_prediction(datetime_utc, location_name, destination, df, int(prediction[0][0]))
 
     if hours > 0:
         for _ in range(hours):
             datetime_utc = datetime_utc + pd.Timedelta(hours=1)
+            print(datetime_utc)
             weather_data = weather_service.fetch_weather_data(datetime_utc, latitude, longitude)
             apparent_temperature = weather_data['apparent_temperature']
 
@@ -102,7 +109,7 @@ def predict_travel_times_for_next_hours(model_path, scalers, location_name, hour
                 'latitude': latitude,
                 'longitude': longitude,
                 'apparent_temperature': apparent_temperature,
-                'minutes': prediction[0][0]
+                'minutes': prediction
             }
 
             new_row = pd.DataFrame([new_row])
@@ -112,12 +119,12 @@ def predict_travel_times_for_next_hours(model_path, scalers, location_name, hour
             df = df.iloc[1:]
             df = pd.concat([df, new_row], ignore_index=True)
 
-            prediction = predict_travel_time(model_path, scalers, location_name, df)
+            prediction = predict_travel_time(model_path, scalers, datetime_utc, location_name, df)
             prediction_item = {}
             prediction_item['location'] = location_name
             prediction_item['destination'] = destination
             prediction_item['datetime'] = datetime_utc.strftime("%Y-%m-%d %H:%M:%S")
-            prediction_item['minutes'] = int(prediction[0][0])
+            prediction_item['minutes'] = int(prediction)
             prediction_item['traffic_status'] = 'HIGH TRAFFIC' if prediction > 150 else 'MEDIUM TRAFFIC' if prediction > 100 else 'LOW TRAFFIC'
             predictions_by_hour.append(prediction_item)
 
