@@ -166,6 +166,16 @@ def get_model_versions_by_name(model_name):
     model_versions = mlflow_service.get_model_version_by_name(model_name)
     return model_versions
 
+class ChangeModelStageRequest(BaseModel):
+    model_name: str
+    version: str
+    stage: str
+
+@app.post("/change-model-stage")
+async def change_model_stage(request: ChangeModelStageRequest):
+    mlflow_service.change_model_stage(request.model_name, request.version, request.stage)
+    return {'message': 'Model stage changed'}
+
 def load_production_models():
     print("Loading production models...")
     for location_name in LOCATIONS.keys():

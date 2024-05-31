@@ -67,10 +67,20 @@ def get_model_version_by_name(name):
     client = MlflowClient()
     return client.search_model_versions(f"name LIKE '%{name}%'")
 
-if __name__ == "__main__":
-    location_name = "LJ_KP"
-    run_id = get_latest_travel_time_production_model_run_id(location_name)
-    if run_id is not None:
-        get_model_data(run_id)
-    else:
-        print(f"No production model found for {location_name}")
+def change_model_stage(model_name, version, stage):
+    client = MlflowClient()
+
+    if stage == "production":
+        latest_production_models = client.get_latest_versions(model_name, stages=["Production"])
+
+        if len(latest_production_models) > 0:
+            # Archive the current production model
+            client.transition_model_version_stage(
+                name=model_name, 
+                version=latest_production_models[0].version,
+                stage="archived",
+            )
+
+    # Promote the new model to production
+    client.transition_model_version_stage(name=model_name,version=version, stage=stage)
+    return
