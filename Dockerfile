@@ -13,7 +13,7 @@ RUN pip install pandas requests uvicorn fastapi onnxruntime python-dotenv pymong
 # Copy the rest of the application code
 COPY ./src /app/src
 COPY ./src/utils /app/src/utils
-COPY ./data /app/data
+# COPY ./data /app/data
 # COPY .env /app/.env
 
 # Create a README file

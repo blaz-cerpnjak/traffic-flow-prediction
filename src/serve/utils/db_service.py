@@ -30,13 +30,13 @@ def get_last_travel_times_window(location_name, window_size=24):
     """
     Returns the last `window_size` rows from the given collection.
     """
-    #db = get_db_client()
-    #cursor = db['travel_time_history'].find({'location_name': location_name}).sort([('datetime', -1)]).limit(window_size)
-    #return pd.DataFrame(list(cursor))
+    db = get_db_client()
+    cursor = db['travel_time_history'].find({'location_name': location_name}).sort([('datetime', -1)]).limit(window_size)
+    return pd.DataFrame(list(cursor))
 
     # get from csv
-    df = pd.read_csv(f'../../data/travel_times/processed/{location_name}/data.csv')
-    return df.tail(window_size)
+    #df = pd.read_csv(f'../../data/travel_times/processed/{location_name}/data.csv')
+    #return df.tail(window_size)
 
 def get_last_vehicle_counters_window(location_name, direction, window_size=24):
     """
