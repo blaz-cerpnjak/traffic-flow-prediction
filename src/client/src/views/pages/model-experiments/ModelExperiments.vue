@@ -85,7 +85,7 @@ const searchExperiments = async () => {
   loading.value = true
 
   try {
-    const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/vehicle-counter/search-experiments/`, {
+    const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/v1/vehicle-counter/search-experiments/`, {
       name: experimentName.value,
       type: selectedType.value.value,
     })

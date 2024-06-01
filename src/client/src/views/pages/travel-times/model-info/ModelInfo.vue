@@ -165,7 +165,7 @@ const fetchTravelTimeModelInfo = async (locationName) => {
   try {
     isLoading.value = true;
 
-    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/travel-times/model-data/${locationName}`)
+    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/v1/travel-times/model-data/${locationName}`)
     if (!response.data) {
       isLoading.value = false;
       toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })

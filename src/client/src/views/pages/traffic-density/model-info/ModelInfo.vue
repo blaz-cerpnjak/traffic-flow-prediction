@@ -181,7 +181,7 @@ const fetchVehicleCounterModelInfo = async () => {
   try {
     loading.value = true;
 
-    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/vehicle-counter/model-data/${locationName}/${direction}`)
+    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/v1/vehicle-counter/model-data/${locationName}/${direction}`)
     if (!response.data) {
       loading.value = false;
       toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })

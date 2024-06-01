@@ -60,7 +60,7 @@ const fetchPredictions = async (locationName, hours) => {
   loading.value = true
 
   try {
-    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/travel-times/predict/${locationName}/${hours}`)
+    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/v1/travel-times/predict/${locationName}/${hours}`)
     if (!response.data) {
       toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })
       return
