@@ -34,9 +34,10 @@ def save_prediction_to_mongodb(datetime_utc, location_name, destination, input_d
 
 def get_last_window(location_name, direction, window_size=24):
     # TODO: load from mongodb
-    df = pd.read_csv(f'../../data/vehicle_counters/processed/{location_name}/{direction}/data.csv')
-    df = df.tail(window_size)
-    return df
+    #df = pd.read_csv(f'../../data/vehicle_counters/processed/{location_name}/{direction}/data.csv')
+    #df = df.tail(window_size)
+    #return df
+    return db_service.get_last_vehicle_counters_window(location_name, direction, window_size)
 
 def predict_vehicle_count(model_path, scalers, datetime_utc, location_name, direction, df):
     """
