@@ -5,10 +5,13 @@
   </div>
 
   <Fieldset v-if="bestRunName" legend="🏅 Current Champion 🏅" class="mb-5">
-    <div>
-      <Tag :value="'MAE: ' + roundToFiveDecimals(bestRun.data.metrics.MAE)" severity="success" class="mb-1 mr-1" />
-      <Tag :value="'MSE: ' + roundToFiveDecimals(bestRun.data.metrics.MSE)" severity="success" class="mb-1 mr-1" />
-      <Tag :value="'EV: ' + roundToFiveDecimals(bestRun.data.metrics.EV)" severity="success" class="mb-1 mr-1" />
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <Tag :value="'MAE: ' + roundToFiveDecimals(bestRun.data.metrics.MAE)" severity="success" class="mb-1 mr-1" />
+        <Tag :value="'MSE: ' + roundToFiveDecimals(bestRun.data.metrics.MSE)" severity="success" class="mb-1 mr-1" />
+        <Tag :value="'EV: ' + roundToFiveDecimals(bestRun.data.metrics.EV)" severity="success" class="mb-1 mr-1" />
+      </div>
+      <Button label="More" icon="pi pi-search" @click="goToModelDetails" />
     </div>
     <br>
     <div>Name: <b>{{ bestRunName }}</b></div>
@@ -59,13 +62,14 @@
 </template>
 
 <script setup>
-import {onMounted, ref, toRefs} from 'vue';
-import {useRoute} from 'vue-router';
-import {useToast} from "primevue/usetoast";
+import { onMounted, ref, toRefs } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useToast} from "primevue/usetoast";
 import axios from "axios";
 
 const route = useRoute();
 const toast = useToast();
+const router = useRouter();
 const { experimentId } = toRefs(route.params);
 
 const loading = ref(false);
@@ -81,7 +85,7 @@ const loadRuns = async (experimentId) => {
   loading.value = true;
 
   try {
-    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/vehicle-counter/runs/${experimentId}/`)
+    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/v1/vehicle-counter/runs/${experimentId}/`)
     if (!response.data) {
       toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })
       return
@@ -149,6 +153,11 @@ const getSeverity = (data, metric) => {
   }
 
   return 'info'
+}
+
+const goToModelDetails = () => {
+  const modelName = getModelName(bestRun.value);
+  router.push({ name: 'modelDetails', params: { modelName: modelName } });
 }
 
 </script>
