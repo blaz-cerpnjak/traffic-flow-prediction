@@ -3,9 +3,6 @@
     <div v-if="loading || !travelTimes" class="card">
       <h5>Travel Times</h5>
       <p>Travel time predictions for {{ predictionsDate }}</p>
-      <div class="card flex justify-content-center">
-        <Slider v-model="sliderValue" :step="20" class="w-14rem" />
-      </div>
       <DataTable :value="loading ? 7 : travelTimes" tableStyle="min-width: 50rem">
         <Column field="destination" header="Destination" sortable style="width: 50%">
           <template #body>

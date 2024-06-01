@@ -23,7 +23,8 @@ const model = ref([
   {
     label: 'Experiments',
     items: [
-        { label: 'Experiments', icon: 'pi pi-fw pi-chart-bar', to: '/model-experiments' }
+      { label: 'Experiments', icon: 'pi pi-fw pi-chart-bar', to: '/model-experiments' },
+      { label: 'Model Registry', icon: 'pi pi-fw pi-chart-bar', to: '/model-registry' }
     ]
   }
 ]);

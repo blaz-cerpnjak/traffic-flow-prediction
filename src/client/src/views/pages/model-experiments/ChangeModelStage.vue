@@ -1,36 +1,34 @@
 <template>
-  <div class="card flex justify-content-center">
-    <Dialog v-model:visible="visible" modal header="Change Model Stage" :style="{ width: '45rem' }">
-      <div class="flex align-items-center mb-5">
-        <span class="p-text-secondary block mr-4">Model Name:</span>
-        <span><b>{{ modelData.name ?? 'Unknown' }}</b></span>
-      </div>
+  <Dialog v-model:visible="visible" modal header="Change Model Stage" :style="{ width: '45rem' }">
+    <div class="flex align-items-center mb-5">
+      <span class="p-text-secondary block mr-4">Model Name:</span>
+      <span><b>{{ modelData.name ?? 'Unknown' }}</b></span>
+    </div>
 
-      <div class="flex align-items-center">
-        <span class="p-text-secondary mr-4">Model Stage:</span>
-        <Dropdown v-model="selectedStage" :options="stages" optionLabel="name" placeholder="Select a Stage" class="w-full md:w-14rem">
-          <template #value="slotProps">
-            <div v-if="slotProps.value" class="flex align-items-center">
-              <Tag :value="slotProps.value.value" :style="{ backgroundColor: getModelStageColor(slotProps.value.name) }" />
-            </div>
-            <span v-else>
-            {{ slotProps.placeholder }}
-          </span>
-          </template>
-          <template #option="slotProps">
-            <div class="flex align-items-center">
-              <Tag :value="slotProps.option.value" :style="{ backgroundColor: getModelStageColor(slotProps.option.name) }" />
-            </div>
-          </template>
-        </Dropdown>
-      </div>
-      
-      <div class="flex justify-content-end gap-2">
-        <Button type="button" label="Cancel" severity="secondary" @click="visible = false"></Button>
-        <Button type="button" label="Apply" @click="changeModelStage"></Button>
-      </div>
-    </Dialog>
-  </div>
+    <div class="flex align-items-center">
+      <span class="p-text-secondary mr-4">Model Stage:</span>
+      <Dropdown v-model="selectedStage" :options="stages" optionLabel="name" placeholder="Select a Stage" class="w-full md:w-14rem">
+        <template #value="slotProps">
+          <div v-if="slotProps.value" class="flex align-items-center">
+            <Tag :value="slotProps.value.value" :style="{ backgroundColor: getModelStageColor(slotProps.value.name) }" />
+          </div>
+          <span v-else>
+          {{ slotProps.placeholder }}
+        </span>
+        </template>
+        <template #option="slotProps">
+          <div class="flex align-items-center">
+            <Tag :value="slotProps.option.value" :style="{ backgroundColor: getModelStageColor(slotProps.option.name) }" />
+          </div>
+        </template>
+      </Dropdown>
+    </div>
+
+    <div class="flex justify-content-end gap-2">
+      <Button type="button" label="Cancel" severity="secondary" @click="visible = false"></Button>
+      <Button type="button" label="Apply" @click="changeModelStage"></Button>
+    </div>
+  </Dialog>
 </template>
 
 <script setup>

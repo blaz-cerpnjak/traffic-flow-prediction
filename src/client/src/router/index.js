@@ -61,6 +61,11 @@ const router = createRouter({
                     component: () => import('@/views/pages/model-experiments/ModelDetails.vue'),
                     props: true
                 },
+                {
+                    path: '/model-registry',
+                    name: 'modelRegistry',
+                    component: () => import('@/views/pages/model-registry/ModelsRegistry.vue')
+                }
             ]
         },
         {
