@@ -159,7 +159,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import HorizontalBarChart from "@/views/components/HorizontalBarChart.vue";
-import axios from "axios";
+import axios from "@/axios";
 import { useToast } from "primevue/usetoast";
 
 const toast = useToast();
@@ -206,7 +206,7 @@ const loadRoutes = async () => {
   loading.value = true
 
   try {
-    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/vehicle-counter/routes`)
+    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/v1/vehicle-counter/routes`)
     if (!response.data) {
       toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })
       return

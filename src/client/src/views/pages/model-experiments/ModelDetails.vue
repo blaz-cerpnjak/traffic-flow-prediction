@@ -36,13 +36,15 @@
   </div>
 
   <Toast />
+  <ChangeModelStage ref="changeModelStageDialog" @changed="loadModelHistory"  />
 </template>
 
 <script setup>
 import { onMounted, ref, toRefs } from "vue";
 import { useRoute } from "vue-router";
 import { useToast } from "primevue/usetoast";
-import axios from "axios";
+import axios from "@/axios";
+import ChangeModelStage from "@/views/pages/model-experiments/ChangeModelStage.vue";
 
 const route = useRoute();
 const toast = useToast();
@@ -51,6 +53,7 @@ const { modelName } = toRefs(route.params);
 const loading = ref(false);
 const modelHistory = ref([]);
 const selectedModel = ref(null);
+const changeModelStageDialog = ref();
 
 onMounted(() => {
   loadModelHistory()
@@ -83,7 +86,7 @@ const getModelStageColor = (stage) => {
 }
 
 const onModelSelected = () => {
-  toast.add({ severity: 'info', summary: 'Model Selected', detail: 'Model version ' + selectedModel.value.version });
+  changeModelStageDialog.value.showDialog(selectedModel.value)
 }
 
 </script>

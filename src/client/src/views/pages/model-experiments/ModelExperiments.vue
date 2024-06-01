@@ -58,7 +58,7 @@
 <script setup>
 
 import { onMounted, ref } from "vue";
-import axios from "axios";
+import axios from "@/axios";
 import { useToast } from "primevue/usetoast";
 import moment from 'moment';
 import { useRouter } from "vue-router";

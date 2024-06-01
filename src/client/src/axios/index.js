@@ -5,7 +5,7 @@ const axiosInstance = axios.create({});
 
 axiosInstance.interceptors.request.use(
     config => {
-        const token = localStorage.getItem('token');
+        const token = import.meta.env.VITE_API_KEY;
 
         if (token && token !== '') {
             config.headers.Authorization = `Bearer ${token}`;

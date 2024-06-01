@@ -159,7 +159,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import HorizontalBarChart from "@/views/components/HorizontalBarChart.vue";
-import axios from "axios";
+import axios from "@/axios";
 import { useToast } from "primevue/usetoast";
 
 const toast = useToast();

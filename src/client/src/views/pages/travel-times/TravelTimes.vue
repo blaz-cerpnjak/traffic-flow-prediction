@@ -52,7 +52,7 @@
 </template>
 <script setup>
 import { onMounted, ref } from "vue";
-import axios from "axios";
+import axios from "@/axios";
 import { useToast } from "primevue/usetoast";
 import { useRouter } from 'vue-router';
 

@@ -65,7 +65,7 @@
 import { onMounted, ref, toRefs } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useToast} from "primevue/usetoast";
-import axios from "axios";
+import axios from "@/axios";
 
 const route = useRoute();
 const toast = useToast();
