@@ -83,7 +83,7 @@ async def predict_travel_times_service():
 
     return {'predictions': predictions}
 
-@app.get("/api/v1/travel-times/model-data/{location_name}", summary="Get travel time model data", response_description="Model data for the travel time prediction")
+@app.get("/api/v1/travel-times/model-data/{route}", summary="Get travel time model data", response_description="Model data for the travel time prediction")
 async def predict_travel_times_service(route: str):
     """
     Retrieve the model data for a specific location.
