@@ -14,7 +14,7 @@ RUN pip install pandas requests uvicorn fastapi onnxruntime python-dotenv pymong
 COPY ./src /app/src
 COPY ./src/utils /app/src/utils
 COPY ./data /app/data
-COPY .env /app/.env
+# COPY .env /app/.env
 
 # Create a README file
 RUN echo "Welcome to my Docker image!" > /app/README.md
