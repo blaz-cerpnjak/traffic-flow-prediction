@@ -27,4 +27,4 @@ jobs:
 
       - name: Call API Deploy Hook
         run: |
-          curl -X POST "${{ secrets.PREDICTION_API_RENDER_DEPLOY_HOOK_URL }} "
+          curl -X POST "${{ secrets.PREDICTION_API_RENDER_DEPLOY_HOOK_URL }}"
