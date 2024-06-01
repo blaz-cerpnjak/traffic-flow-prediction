@@ -121,62 +121,72 @@ async def get_vehicle_counter_model_data(location_name: str, direction: str):
     - **location_name**: The name of the location.
     - **direction**: The direction of the vehicle counter.
     """
-    run_id = mlflow_service.get_latest_vehicle_counter_production_model_run_id(location_name, direction)
+    run_id = mlflow_service.get_latest_vehicle_counter_model_run_id(location_name, direction)
     if run_id is None:
         raise HTTPException(status_code=404, detail="Model data not found")
     
     model_data = mlflow_service.get_model_data(run_id)
     return {'data': model_data}
 
-@app.get("/api/v1/vehicle-counter/predict/{location_name}/{direction}/{hours}", summary="Predict vehicle count for a specific location and direction", response_description="Vehicle count predictions")
-async def predict_vehicle_counter_service(location_name: str, direction: str, hours: int):
+class VehicleCountPredictionRequest(BaseModel):
+    location_name: str
+    direction: str
+    hours: int
+    stage: Optional[str] = "Production"
+
+
+@app.post("/api/v1/vehicle-counter/predict", summary="Predict vehicle count for a specific location and direction", response_description="Vehicle count predictions")
+async def predict_vehicle_counter_service(request: VehicleCountPredictionRequest):
     """
     Predict vehicle counts for a specific location, direction, and number of hours.
     - **location_name**: The name of the traffic (camera) sensor location.
     - **direction**: The direction of the vehicle counter.
     - **hours**: The number of hours to predict.
     """
-    if not os.path.exists(location_name):
-        os.makedirs(location_name)
+    if not os.path.exists(request.location_name):
+        os.makedirs(request.location_name)
     
-    if not os.path.exists(f'{location_name}/{direction}'):
-        os.makedirs(f'{location_name}/{direction}')
+    if not os.path.exists(f'{request.location_name}/{request.direction}'):
+        os.makedirs(f'{request.location_name}/{request.direction}')
 
-    model_path = f'{location_name}_{direction}_vehicle_counter_model.onnx'
+    if not os.path.exists(f'{request.location_name}/{request.direction}/{request.stage}'):
+        os.makedirs(f'{request.location_name}/{request.direction}/{request.stage}')
+
+    model_path = f'{request.location_name}_{request.direction}_{request.stage}_vehicle_counter_model.onnx'
 
     # Check if the model file exists
     if not os.path.exists(model_path):
-        run_id = mlflow_service.get_latest_vehicle_counter_production_model_run_id(location_name, direction)
+        run_id = mlflow_service.get_latest_vehicle_counter_model_run_id(request.location_name, request.direction, request.stage)
         if run_id is None:
             raise HTTPException(status_code=404, detail="Model data not found")
         
-        model, scalers = models_service.fetch_current_vehicle_counter_model(location_name, direction)
+        model, scalers = models_service.fetch_current_vehicle_counter_model(request.location_name, request.direction, request.stage)
         number_of_vehicle_right_lane_scaler = scalers['number_of_vehicles_right_lane_scaler']
         apparent_temperature_scaler = scalers['apparent_temperature_scaler']
 
         # save scalers
-        with open(f'{location_name}/{direction}/number_of_vehicles_right_lane_scaler.joblib', 'wb') as f:
+        with open(f'{request.location_name}/{request.direction}/{request.stage}/number_of_vehicles_right_lane_scaler.joblib', 'wb') as f:
             joblib.dump(number_of_vehicle_right_lane_scaler, f)
 
-        with open(f'{location_name}/{direction}/apparent_temperature_scaler.joblib', 'wb') as f:
+        with open(f'{request.location_name}/{request.direction}/{request.stage}/apparent_temperature_scaler.joblib', 'wb') as f:
             joblib.dump(apparent_temperature_scaler, f)
 
         # Save the model to a local file
         onnx.save_model(model, model_path)
 
     my_scalers = {}
-    with open(f'{location_name}/{direction}/number_of_vehicles_right_lane_scaler.joblib', 'rb') as f:
+    with open(f'{request.location_name}/{request.direction}/{request.stage}/number_of_vehicles_right_lane_scaler.joblib', 'rb') as f:
         my_scalers['number_of_vehicles_right_lane_scaler'] = joblib.load(f)
 
-    with open(f'{location_name}/{direction}/apparent_temperature_scaler.joblib', 'rb') as f:
+    with open(f'{request.location_name}/{request.direction}/{request.stage}/apparent_temperature_scaler.joblib', 'rb') as f:
         my_scalers['apparent_temperature_scaler'] = joblib.load(f)
 
     predictions = predict_vehicle_count_for_next_hours(
-        f'{location_name}_{direction}_vehicle_counter_model.onnx', 
+        f'{request.location_name}_{request.direction}_{request.stage}_vehicle_counter_model.onnx', 
         my_scalers, 
-        location_name, 
-        direction, 
-        hours
+        request.location_name, 
+        request.direction, 
+        request.hours
     )
 
     print(predictions)

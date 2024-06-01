@@ -53,7 +53,7 @@ def fetch_current_travel_time_model(location_name):
 
     return model, scalers
 
-def fetch_current_vehicle_counter_model(location_name, direction):
+def fetch_current_vehicle_counter_model(location_name, direction, stage="Production"):
     """
     Fetches and returns the current production model with scalers for predicting vehicle counters for the given location and direction.
     Model gets fetched from Mlfow model registry.
@@ -71,7 +71,7 @@ def fetch_current_vehicle_counter_model(location_name, direction):
     client = MlflowClient()
     
     model_name = f"{location_name}_{direction}_vehicle_counter_onnx_model"
-    latest_production_models = client.get_latest_versions(model_name, stages=["Production"])
+    latest_production_models = client.get_latest_versions(model_name, stages=[stage])
     if len(latest_production_models) == 0:
         print(f"No production model found for {location_name}")
         return None, None

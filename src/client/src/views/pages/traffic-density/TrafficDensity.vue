@@ -89,7 +89,7 @@ const loadRoutes = async () => {
     routes.value = response.data.routes
     selectedRoute.value = routes.value[0]
 
-    loadVehicleCountPredictions(hoursToPredict.value ?? 7)
+    loadVehicleCountPredictions();
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })
   } finally {
@@ -108,7 +108,13 @@ const loadVehicleCountPredictions = async () => {
   const direction = selectedRoute.value.direction;
 
   try {
-    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/v1/vehicle-counter/predict/${location}/${direction}/${hoursToPredict.value ?? 7}`)
+    const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/v1/vehicle-counter/predict`, {
+      location_name: location,
+      direction: direction,
+      hours: hoursToPredict.value ?? 7,
+      stage: "Production"
+    })
+
     if (!response.data) {
       toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })
       return
@@ -126,10 +132,54 @@ const loadVehicleCountPredictions = async () => {
 
     vehicleCountPredictions.value = predictions;
     chartData.value = setChartData('Number of vehicles per hour', vehicleCountPredictions.value.map(prediction => prediction.datetime), vehicleCountPredictions.value.map(prediction => prediction.number_of_vehicles_right_lane))
+
+    loadStagingVehicleCountPredictions();
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })
   } finally {
     loading.value = false
+  }
+}
+
+const loadStagingVehicleCountPredictions = async () => {
+  if (!selectedRoute.value) {
+    return;
+  }
+
+  const location = selectedRoute.value.location;
+  const direction = selectedRoute.value.direction;
+
+  try {
+    const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/v1/vehicle-counter/predict`, {
+      location_name: location,
+      direction: direction,
+      hours: hoursToPredict.value ?? 7,
+      stage: "Staging"
+    })
+
+    if (!response.data) {
+      return;
+    }
+
+    const predictions = []
+    for (const prediction of response.data.predictions) {
+      predictions.push({
+        location: prediction.location,
+        datetime: convertUtcToLocal(prediction.datetime),
+        route: prediction.route,
+        number_of_vehicles_right_lane: prediction.number_of_vehicles_right_lane,
+      })
+    }
+
+    vehicleCountPredictions.value = predictions;
+    chartData.value = setChartData(
+        'Number of vehicles per hour',
+        vehicleCountPredictions.value.map(prediction => prediction.datetime),
+        vehicleCountPredictions.value.map(prediction => prediction.number_of_vehicles_right_lane),
+        predictions.map(prediction => prediction.number_of_vehicles_right_lane + 5)
+    )
+  } catch (e) {
+    console.error(e);
   }
 }
 
@@ -142,20 +192,36 @@ const convertUtcToLocal = (datetimeUtc) => {
   return date.toLocaleString();
 }
 
-const setChartData = (label, labels, data) => {
+const setChartData = (label, labels, data, stagingModelData = null) => {
   const documentStyle = getComputedStyle(document.documentElement);
+
+  const mainModelData = {
+    label: label,
+    data: data,
+    fill: false,
+    borderColor: documentStyle.getPropertyValue('--cyan-500'),
+    tension: 0.4
+  };
+
+  if (stagingModelData) {
+    return {
+      labels: labels,
+      datasets: [
+        mainModelData,
+        {
+          label: 'Staging Model',
+          data: stagingModelData,
+          fill: false,
+          borderColor: documentStyle.getPropertyValue('--gray-500'),
+          tension: 0.4
+        }
+      ]
+    };
+  }
 
   return {
     labels: labels,
-    datasets: [
-      {
-        label: label,
-        data: data,
-        fill: false,
-        borderColor: documentStyle.getPropertyValue('--cyan-500'),
-        tension: 0.4
-      }
-    ]
+    datasets: [ mainModelData ]
   };
 };
 const setChartOptions = () => {
