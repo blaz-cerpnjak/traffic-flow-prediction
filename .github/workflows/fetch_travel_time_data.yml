@@ -71,7 +71,7 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add data.dvc
-          git commit -m "Update raw mbajk data on `date` with Github Actions"
+          git commit -m "Update data `date` with Github Actions"
 
       - name: Push to git
         uses: ad-m/github-push-action@master
