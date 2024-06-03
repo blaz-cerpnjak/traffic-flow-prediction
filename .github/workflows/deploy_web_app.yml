@@ -26,6 +26,6 @@ jobs:
           docker build -t blazc007/traffic-flow-prediction-web-app:latest .
           docker push blazc007/traffic-flow-prediction-web-app:latest
 
-      #- name: Call API Deploy Hook
-      #  run: |
-      #    curl -X POST "${{ secrets.PREDICTION_API_RENDER_DEPLOY_HOOK_URL }}"
+      - name: Call API Deploy Hook
+        run: |
+          curl -X POST "${{ secrets.WEB_APP_RENDER_DEPLOY_HOOK_URL }}"
