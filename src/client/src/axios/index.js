@@ -1,7 +1,7 @@
 import axios from 'axios'
 import router from '@/router'
 
-const axiosInstance = () => axios.create({});
+const axiosInstance = axios.create({});
 
 axiosInstance.interceptors.request.use(
     config => {
