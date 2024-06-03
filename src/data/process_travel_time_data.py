@@ -20,7 +20,7 @@ for subfolder in os.listdir(raw_data_dir):
         if os.path.exists(travel_times_path) and os.path.exists(weather_data_path):
             travel_times_df = pd.read_csv(travel_times_path)
             weather_data_df = pd.read_csv(weather_data_path)
-            weather_data_df.drop(columns=['datetime'], inplace=True)
+            weather_data_df.drop(columns=['datetime', 'latitude', 'longitude'], inplace=True)
             
             os.makedirs(processed_subfolder_path, exist_ok=True)
 
@@ -30,7 +30,7 @@ for subfolder in os.listdir(raw_data_dir):
             merged_df.to_csv(merged_output_path, index=False)
 
             # Save new row to MongoDB
-            last_row = merged_df.iloc[-1]
+            last_row = merged_df.iloc[-1].copy()
             db_service.save_to_collection('travel_time_history', last_row)
             
             # Determine the split index for an 80-20 train-test split

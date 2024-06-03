@@ -1,7 +1,7 @@
 import os
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
-from fastapi import FastAPI, HTTPException, Header, Depends
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from src.serve.utils import models_service, mlflow_service
 from src.serve.utils.predict_travel_times_service import predict_travel_times_for_next_hours
@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from typing import Optional
 from dotenv import load_dotenv
 from fastapi.security import OAuth2PasswordBearer
+import src.serve.utils.db_service as db_service
 
 scalers = {}
 
@@ -258,6 +259,38 @@ async def change_model_stage(request: ChangeModelStageRequest):
     """
     mlflow_service.change_model_stage(request.model_name, request.version, request.stage)
     return {'message': 'Model stage changed'}
+
+@app.get("/api/v1/travel-times/data-test-report", summary="Get latest date test report from mongodb.", response_description="Data test report")
+async def get_travel_times_data_test_report():
+    """
+    Retrieve the latest data test report.
+    """
+    report = db_service.get_latest_data_test_report(collection_name='travel_time_data_quality_reports')
+    return report
+
+@app.get("/api/v1/vehicle-counters/data-test-report", summary="Get latest date test report from mongodb.", response_description="Data test report")
+async def get_vehicle_counters_data_test_report():
+    """
+    Retrieve the latest data test report.
+    """
+    report = db_service.get_latest_data_test_report(collection_name='vehicle-count-data-quality-reports')
+    return report
+
+@app.get("/api/v1/travel-times/data-drift-report", summary="Get latest data drift report from mongodb.", response_description="Data drift report")
+async def get_travel_times_data_drift_report():
+    """
+    Retrieve the latest data drift report.
+    """
+    report = db_service.get_latest_data_drift_report(collection_name='travel_time_data_drift_reports')
+    return report
+
+@app.get("/api/v1/vehicle-counters/data-drift-report", summary="Get latest data drift report from mongodb.", response_description="Data drift report")
+async def get_vehicle_counters_data_drift_report():
+    """
+    Retrieve the latest data drift report.
+    """
+    report = db_service.get_latest_data_drift_report(collection_name='vehicle_count_data_drift_reports')
+    return report
 
 def load_production_models():
     print("Loading production models...")

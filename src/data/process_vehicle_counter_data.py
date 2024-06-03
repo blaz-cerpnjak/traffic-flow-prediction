@@ -23,6 +23,7 @@ for folder in os.listdir(raw_data_dir):
                 if os.path.exists(travel_times_path) and os.path.exists(weather_data_path):
                     travel_times_df = pd.read_csv(travel_times_path)
                     weather_data_df = pd.read_csv(weather_data_path)
+                    weather_data_df.drop(columns=['datetime', 'latitude', 'longitude'], inplace=True)
                     
                     processed_subfolder_path = os.path.join(processed_data_dir, folder, subfolder)
                     os.makedirs(processed_subfolder_path, exist_ok=True)

@@ -28,11 +28,17 @@ def get_travel_times_by_date(location_name, date):
 
 def get_last_travel_times_window(location_name, window_size=24):
     """
-    Returns the last `window_size` rows from the given collection.
+    Returns the last `window_size` rows from the given `location_name`.
     """
     db = get_db_client()
-    cursor = db['travel_time_history'].find({'location_name': location_name}).sort([('datetime', -1)]).limit(window_size)
-    return pd.DataFrame(list(cursor))
+    cursor = db['travel_time_history'].find({'location_name': location_name}).sort([('datetime', 1)]).limit(window_size)
+    df = pd.DataFrame(list(cursor))
+    if df.empty:
+        raise ValueError("Last travel time window data not found")
+
+    df.columns = df.columns.str.strip()
+    df.drop(columns=['_id'], inplace=True)
+    return df
 
     # get from csv
     #df = pd.read_csv(f'../../data/travel_times/processed/{location_name}/data.csv')
@@ -43,9 +49,14 @@ def get_last_vehicle_counters_window(location_name, direction, window_size=24):
     Returns the last `window_size` rows from the given collection.
     """
     db = get_db_client()
+    cursor = db['vehicle_counter_history'].find({'location_name': location_name, 'direction': direction}).sort([('datetime', 1)]).limit(window_size)
+    df = pd.DataFrame(list(cursor))
+    if df.empty:
+        raise ValueError("Last travel time window data not found")
 
-    cursor = db['vehicle_counter_history'].find({'location_name': location_name, 'direction': direction}).sort([('datetime', -1)]).limit(window_size)
-    return pd.DataFrame(list(cursor))
+    df.columns = df.columns.str.strip()
+    df.drop(columns=['_id'], inplace=True)
+    return df
 
 def save_travel_time_prediction(datetime_utc, location_name, destination, df_input, prediction):
     """
@@ -96,3 +107,45 @@ def save_vehicle_counter_prediction(datetime_utc, location_name, direction, df_i
         "prediction": prediction
     })
     return
+
+def replace_travel_time_history_db():
+    """
+    Refreshes the travel time history database collection.
+    """
+    raw_data_dir = 'data/travel_times/processed'
+    db = get_db_client()
+    db['travel_time_history'].drop()
+
+    for location in os.listdir(raw_data_dir):
+        location_dir = os.path.join(raw_data_dir, location)
+        data_path = os.path.join(location_dir, 'data.csv')
+        print(data_path)
+
+        if os.path.exists(data_path):
+            df = pd.read_csv(data_path)
+            db['travel_time_history'].insert_many(df.to_dict(orient='records'))
+            continue
+
+def get_latest_data_test_report(collection_name):
+    """
+    Returns the latest travel times data test report.
+    """
+    print(collection_name)
+    db = get_db_client()
+    latest_report = db[collection_name].find_one({}, sort=[('_id', -1)]) 
+    latest_report['_id'] = str(latest_report['_id']) # Convert ObjectId to string
+    return latest_report
+
+def get_latest_data_drift_report(collection_name):
+    """
+    Returns the latest travel times data drift report.
+    """
+    db = get_db_client()
+    latest_report = db[collection_name].find_one({}, sort=[('_id', -1)]) 
+    latest_report['_id'] = str(latest_report['_id']) # Convert ObjectId to string
+    return latest_report
+
+if __name__ == '__main__':
+    replace_travel_time_history_db()
+    print("Travel time history database refreshed.")
+    pass
