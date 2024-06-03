@@ -8,7 +8,7 @@ on:
   #    - "src/**"
 
 jobs:
-  build-and-deploy_api:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

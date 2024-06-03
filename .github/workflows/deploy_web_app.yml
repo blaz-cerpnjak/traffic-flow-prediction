@@ -1,4 +1,4 @@
-name: Prediction API Render Deploy Hook
+name: Web App Render Deploy Hook
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
   #    - "src/**"
 
 jobs:
-  build-and-deploy_api:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -22,7 +22,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          cd client
+          cd src/client
           docker build -t blazc007/traffic-flow-prediction-web-app:latest .
           docker push blazc007/traffic-flow-prediction-web-app:latest
 
