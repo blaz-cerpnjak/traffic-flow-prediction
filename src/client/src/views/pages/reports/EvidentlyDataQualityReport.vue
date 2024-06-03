@@ -1,7 +1,8 @@
 <template>
   <div class="card">
-    <h5>Latest Evidently Data Test</h5>
+    <h5>Latest Evidently Data Test Report</h5>
     <br>
+    <Dropdown v-model="selectedReportType" :options="reportTypes" @change="loadLatestReport" optionLabel="name" placeholder="Select a City" class="w-full md:w-14rem mb-6" />
     <div v-if="tests">
       <div v-for="(test, index) in tests" :key="index" class="mb-4" :class="test.status.toLowerCase()">
         <Card :style="{ background: test.status === 'SUCCESS' ? '#edfaf4' : '#fff3f2' }">
@@ -35,15 +36,27 @@ const toast = useToast();
 const tests = ref([]);
 const loading = ref(false);
 
+const reportTypes = ref([
+  { name: 'Travel Times', value: 'travel-times' },
+  { name: 'Vehicle Counters', value: 'vehicle-counters' },
+])
+const selectedReportType = ref(reportTypes.value[0])
+
 onMounted(() => {
   loadLatestReport();
 })
 
 const loadLatestReport = async () => {
+  if (!selectedReportType.value) {
+    return;
+  }
+
   loading.value = true
 
+  console.log(selectedReportType.value.value)
+
   try {
-    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/v1/travel-times/data-test-report/`)
+    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/v1/${selectedReportType.value.value}/data-test-report/`)
     if (!response.data) {
       toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })
       return

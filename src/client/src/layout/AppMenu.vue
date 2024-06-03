@@ -23,8 +23,15 @@ const model = ref([
   {
     label: 'Experiments',
     items: [
-      { label: 'Experiments', icon: 'pi pi-fw pi-chart-bar', to: '/model-experiments' },
-      { label: 'Model Registry', icon: 'pi pi-fw pi-chart-bar', to: '/model-registry' }
+      { label: 'Experiments', icon: 'pi pi-fw pi-book', to: '/model-experiments' },
+      { label: 'Model Registry', icon: 'pi pi-fw pi-database', to: '/model-registry' }
+    ]
+  },
+  {
+    label: 'Latest Report',
+    items: [
+      { label: 'Data Quality Report', icon: 'pi pi-fw pi-file-excel', to: '/data-quality-report' },
+      { label: 'Data Drift Report', icon: 'pi pi-fw pi-file-excel', to: '/data-drift-report' }
     ]
   }
 ]);

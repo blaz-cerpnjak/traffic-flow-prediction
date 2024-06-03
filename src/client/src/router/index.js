@@ -65,6 +65,16 @@ const router = createRouter({
                     path: '/model-registry',
                     name: 'modelRegistry',
                     component: () => import('@/views/pages/model-registry/ModelsRegistry.vue')
+                },
+                {
+                    path: '/data-quality-report',
+                    name: 'evidentlyDataTests',
+                    component: () => import('@/views/pages/reports/EvidentlyDataQualityReport.vue')
+                },
+                {
+                    path: '/data-drift-report',
+                    name: 'evidentlyDataDriftReport',
+                    component: () => import('@/views/pages/reports/EvidentlyDataDriftReport.vue')
                 }
             ]
         },
