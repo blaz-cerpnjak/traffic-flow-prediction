@@ -9,11 +9,11 @@ export default defineConfig(() => {
         plugins: [vue()],
         server: {
             proxy: {
-                '/api': {
-                    target: 'https://traffic-flow-prediction-api-0-1-0.onrender.com/api',
+                '/api/v1': {
+                    target: 'https://traffic-flow-prediction-api-0-1-0.onrender.com',
                     changeOrigin: true,
-                    secure: true, // Set to true if your backend uses HTTPS
-                    rewrite: (path) => path.replace(/^\/api/, ''),
+                    secure: true, // True if your backend uses HTTPS
+                    rewrite: (path) => path.replace(/^\/api\/v1/, '/api/v1'),
                 },
             },
         },
