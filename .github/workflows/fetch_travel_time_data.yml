@@ -63,7 +63,7 @@ jobs:
 
       - name: Validate data
         run: |
-          cd src/date/test
+          cd src/data/test
           python test_processed_data.py
 
       - name: Test data drift
