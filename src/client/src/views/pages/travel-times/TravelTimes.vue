@@ -65,7 +65,7 @@ const loadTravelTimes = async () => {
 
   try {
     console.log(import.meta.env.VITE_API_BASE_URL);
-    const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/v1/travel-times/predict/`)
+    const response = await axios.get(`${process.env.VITE_API_BASE_URL}/api/v1/travel-times/predict/`)
     if (!response.data) {
       toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })
       return
