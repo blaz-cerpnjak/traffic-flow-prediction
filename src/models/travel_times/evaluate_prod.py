@@ -4,25 +4,7 @@ from datetime import datetime
 from sklearn.metrics import mean_absolute_error, mean_squared_error, explained_variance_score
 from datetime import datetime, timedelta, timezone
 import src.serve.utils.db_service as db_service
-
-def get_actual_travel_times(datetime_utc=datetime.now(timezone.utc)):
-    """
-    Returns travel time for all locations from MongoDB.
-    """
-    start_date = datetime(datetime_utc.year, datetime_utc.month, datetime_utc.day)
-    end_date = start_date + timedelta(days=1)
-
-    query = {
-        "datetime": {
-            "$gte": start_date,
-            "$lt": end_date
-        }
-    }
-
-    db = db_service.get_db_client()
-    results = db['travel_time_history'].find().sort("datetime", 1)
-
-    return results
+import pandas as pd
 
 def get_travel_time_predictions(datetime_utc=datetime.now(timezone.utc)):
     """
@@ -42,59 +24,76 @@ def get_travel_time_predictions(datetime_utc=datetime.now(timezone.utc)):
     results = db['travel_time_predictions'].find(query).sort("datetime", 1)
     return results
 
-def evaluate_predictions(actual_by_location, predictions_by_location):
-    """
-    Returns MAE, MSE and EV scores for the given actual values and predictions.
-    """
+def calculate_metrics(predictions_by_locations):
+    metrics_by_location = {}
 
-    mae_by_location = {}
-    mse_by_location = {}
-    ev_by_location = {}
+    for location, hours in predictions_by_locations.items():
+        predicted_values = []
+        actual_values = []
 
-    db = db_service.get_db_client()
-    datetime_now = datetime.now(timezone.utc)
+        for hour, values in hours.items():
+            predicted_values.append(values['prediction'])
+            actual_values.append(values['actual'])
 
-    for location in actual_by_location.keys():
-        actual_values = actual_by_location[location]
-        predictions = predictions_by_location[location]
+        mae = mean_absolute_error(actual_values, predicted_values)
+        mse = mean_squared_error(actual_values, predicted_values)
+        ev = explained_variance_score(actual_values, predicted_values)
 
-        mae = mean_absolute_error(actual_values, predictions)
-        mse = mean_squared_error(actual_values, predictions)
-        ev = explained_variance_score(actual_values, predictions)
-
-        db['travel_time_evaluation'].insert_one({
-            'datetime': datetime_now,
-            'location': location,
-            'actual_values': actual_values,
-            'predictions': predictions,
+        metrics_by_location[location] = {
             'mae': mae,
             'mse': mse,
             'ev': ev
-        })
+        }
 
-        mae_by_location[location] = mae
-        mse_by_location[location] = mse
-        ev_by_location[location] = ev
-
+        print(f"Location: {location}")
+        print(f"MAE: {mae}")
+        print(f"MSE: {mse}")
+        print(f"EV: {ev}")
+        
+        db['travel_time_evaluations'].insert_one({
+                "datetime": datetime.now(timezone.utc),
+                "location_name": location,
+                "mae": mae,
+                "mse": mse,
+                "ev": ev
+            })
+        
 if __name__ == '__main__':
-    results = get_actual_travel_times()
+    yesterday = datetime.now(timezone.utc) - timedelta(days=2)
 
-    actual_by_locations = {}
-
-    for result in results:
-        location_name = result['location_name']
-        if location_name not in actual_by_locations:
-            actual_by_locations[location_name] = []
-
-        actual_by_locations[location_name].append(result['minutes'])
-
-    results = get_travel_time_predictions()
-
+    db = db_service.get_db_client()
+    results = get_travel_time_predictions(datetime_utc=yesterday)
     predictions_by_locations = {}
 
     for result in results:
         location_name = result['location_name']
-        if location_name not in predictions_by_locations:
-            predictions_by_locations[location_name] = []
+        hour = pd.to_datetime(result['datetime']).hour
 
-        predictions_by_locations[location_name].append(result['prediction'])
+        prediction_time_dt = result['datetime']
+
+        df = pd.read_csv(f'../../../data/travel_times/processed/{location_name}/data.csv')
+        df['datetime'] = pd.to_datetime(df['datetime'])
+
+        actual_value_row = df[
+            (df['location_name'] == location_name) & 
+            (df['datetime'].dt.date == prediction_time_dt.date()) & 
+            (df['datetime'].dt.hour == prediction_time_dt.hour)
+        ]
+        
+        if not actual_value_row.empty:
+            actual_value = actual_value_row['minutes'].values[0]
+        else:
+            continue
+
+        if location_name not in predictions_by_locations:
+            predictions_by_locations[location_name] = {}
+
+        if hour not in predictions_by_locations[location_name]:
+            predictions_by_locations[location_name][hour] = { 'actual': 0, 'prediction': 0 }
+
+        predictions_by_locations[location_name][hour] = {
+            'actual': actual_value,
+            'prediction': result['prediction']
+        }
+
+    calculate_metrics(predictions_by_locations)
