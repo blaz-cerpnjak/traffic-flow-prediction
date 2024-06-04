@@ -23,7 +23,7 @@ jobs:
       - name: Build Docker image
         run: |
           cd src/client
-          docker build -t blazc007/traffic-flow-prediction-web-app:latest .
+          docker build --build-arg VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }} --build-arg VITE_API_KEY=${{ secrets.VITE_API_KEY }} -t blazc007/traffic-flow-prediction-web-app:latest .
           docker push blazc007/traffic-flow-prediction-web-app:latest
 
       - name: Call API Deploy Hook
