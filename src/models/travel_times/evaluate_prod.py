@@ -25,6 +25,7 @@ def get_travel_time_predictions(datetime_utc=datetime.now(timezone.utc)):
     return results
 
 def calculate_metrics(predictions_by_locations):
+    db = db_service.get_db_client()
     metrics_by_location = {}
 
     for location, hours in predictions_by_locations.items():
@@ -50,13 +51,13 @@ def calculate_metrics(predictions_by_locations):
         print(f"MSE: {mse}")
         print(f"EV: {ev}")
         
-        db['travel_time_evaluations'].insert_one({
-                "datetime": datetime.now(timezone.utc),
-                "location_name": location,
-                "mae": mae,
-                "mse": mse,
-                "ev": ev
-            })
+        db['travel_time_evalutations'].insert_one({
+            "datetime": datetime.now(timezone.utc),
+            "location_name": location,
+            "mae": mae,
+            "mse": mse,
+            "ev": ev
+        })
         
 if __name__ == '__main__':
     yesterday = datetime.now(timezone.utc) - timedelta(days=1)
