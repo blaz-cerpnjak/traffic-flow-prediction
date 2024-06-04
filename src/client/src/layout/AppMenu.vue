@@ -33,7 +33,13 @@ const model = ref([
       { label: 'Data Quality Report', icon: 'pi pi-fw pi-file-excel', to: '/data-quality-report' },
       { label: 'Data Drift Report', icon: 'pi pi-fw pi-file-excel', to: '/data-drift-report' }
     ]
-  }
+  },
+  {
+    label: 'Evaluations',
+    items: [
+      { label: 'Model Evaluations', icon: 'pi pi-fw pi-chart-line', to: '/model-production-evaluations' },
+    ]
+  },
 ]);
 </script>
 

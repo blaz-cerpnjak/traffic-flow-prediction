@@ -33,8 +33,6 @@ const loadLatestReport = async () => {
     return;
   }
 
-  loading.value = true
-
   console.log(selectedReportType.value.value)
 
   try {

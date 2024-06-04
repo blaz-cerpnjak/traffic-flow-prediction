@@ -75,6 +75,11 @@ const router = createRouter({
                     path: '/data-drift-report',
                     name: 'evidentlyDataDriftReport',
                     component: () => import('@/views/pages/reports/EvidentlyDataDriftReport.vue')
+                },
+                {
+                    path: 'model-production-evaluations',
+                    name: 'modelProductionEvaluations',
+                    component: () => import('@/views/pages/model-production-evaluations/ModelProductionEvaluations.vue')
                 }
             ]
         },
