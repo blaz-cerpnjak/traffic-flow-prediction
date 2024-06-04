@@ -292,6 +292,22 @@ async def get_vehicle_counters_data_drift_report():
     report = db_service.get_latest_data_drift_report(collection_name='vehicle_count_data_drift_reports')
     return report
 
+@app.get("/api/v1/travel-times/evaluations", summary="Get travel time evaluations", response_description="Travel time evaluations")
+async def get_travel_time_evaluations():
+    """
+    Retrieve travel time evaluations.
+    """
+    evaluations = db_service.get_travel_time_evaluations()
+    return evaluations
+
+@app.get("/api/v1/vehicle-counters/evaluations", summary="Get vehicle counter evaluations", response_description="Vehicle counter evaluations")
+async def get_vehicle_counter_evaluations():
+    """
+    Retrieve vehicle counter evaluations.
+    """
+    evaluations = db_service.get_vehicle_counter_evaluations()
+    return evaluations
+
 def load_production_models():
     print("Loading production models...")
     for location_name in LOCATIONS.keys():

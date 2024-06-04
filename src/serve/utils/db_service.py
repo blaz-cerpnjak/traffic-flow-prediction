@@ -2,6 +2,7 @@ import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import pandas as pd
+import json
 
 def get_db_client():
     """
@@ -144,6 +145,28 @@ def get_latest_data_drift_report(collection_name):
     latest_report = db[collection_name].find_one({}, sort=[('_id', -1)]) 
     latest_report['_id'] = str(latest_report['_id']) # Convert ObjectId to string
     return latest_report
+
+def get_travel_time_evaluations():
+    """
+    Returns the travel time evaluations.
+    """
+    db = get_db_client()
+    cursor = db['travel_time_evalutations'].find({})
+    documents = list(cursor)
+    for doc in documents:
+        doc['_id'] = str(doc['_id']) # Convert ObjectId to string
+    return documents
+
+def get_vehicle_counter_evaluations():
+    """
+    Returns the vehicle counter evaluations.
+    """
+    db = get_db_client()
+    cursor = db['vehicle_counter_evaluations'].find({})
+    documents = list(cursor)
+    for doc in documents:
+        doc['_id'] = str(doc['_id']) # Convert ObjectId to string
+    return documents
 
 if __name__ == '__main__':
     replace_travel_time_history_db()
