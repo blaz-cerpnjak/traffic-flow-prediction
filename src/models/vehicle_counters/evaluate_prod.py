@@ -62,7 +62,7 @@ def calculate_metrics(predictions_by_locations):
             })
 
 if __name__ == '__main__':
-    yesterday = datetime.now(timezone.utc) - timedelta(days=4)
+    yesterday = datetime.now(timezone.utc) - timedelta(days=1)
 
     db = db_service.get_db_client()
     results = get_vehicle_counter_predictions(datetime_utc=yesterday)

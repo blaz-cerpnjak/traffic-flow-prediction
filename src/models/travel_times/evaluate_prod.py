@@ -59,7 +59,7 @@ def calculate_metrics(predictions_by_locations):
             })
         
 if __name__ == '__main__':
-    yesterday = datetime.now(timezone.utc) - timedelta(days=2)
+    yesterday = datetime.now(timezone.utc) - timedelta(days=1)
 
     db = db_service.get_db_client()
     results = get_travel_time_predictions(datetime_utc=yesterday)
