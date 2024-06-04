@@ -61,6 +61,16 @@ jobs:
       - name: Process vehicle counters data
         run: python src/data/process_vehicle_counter_data.py
 
+      - name: Validate data
+        run: |
+          cd src/date/test
+          python test_processed_data.py
+
+      - name: Test data drift
+        run: |
+          cd src/data/test
+          python test_data_drift.py
+
       - name: Push data to dvc
         run: |
           dvc add data
