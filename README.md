@@ -1,6 +1,9 @@
 # TrafficSense ~ Predicting Travel Times & Traffic Flow on Highways in Slovenia
 
-![alt text](image.png)
+[Vue Web App Demo](https://traffic-flow-prediction-web-app.onrender.com)
+| [Prediction API](https://traffic-flow-prediction-api-0-1-0.onrender.com/docs) (DISCLAIMER: it can take up to 1 minute for all the Docker containers on Render to start when cold start.)
+
+![alt text](screenshots/image.png)
 
 # Table of Contents
 0. [Screenshots](#screenshots)
