@@ -3,7 +3,10 @@
     <div class="card">
       <h5>Traffic Density</h5>
       <p>Travel predictions for {{ predictionsDate }}</p>
-      <Dropdown v-model="selectedRoute" :options="routes" filter @change="loadVehicleCountPredictions" optionLabel="value" placeholder="Select a Route" class="w-full md:w-14rem">
+      <div ref="mapContainer" class="map-container"></div>
+    </div>
+    <div class="card flex items-center space-x-4">
+      <Dropdown v-model="selectedRoute" :options="routes" filter @change="loadVehicleCountPredictions" optionLabel="value" placeholder="Select a Route" class="w-full md:w-14rem mr-5">
         <template #value="slotProps">
           <div v-if="slotProps.value" class="flex align-items-center">{{ slotProps.value.value }}</div>
           <span v-else>{{ slotProps.placeholder }}</span>
@@ -14,8 +17,6 @@
           </div>
         </template>
       </Dropdown>
-      <br>
-      <br>
       <InputNumber v-model="hoursToPredict" @input="onHoursToPredictChanged" showButtons buttonLayout="horizontal" class="centered-input-number" style="width: 3rem" :min="0" :max="168">
         <template #incrementbuttonicon>
           <span class="pi pi-plus" />
@@ -52,6 +53,9 @@
 import { onMounted, ref } from "vue";
 import axios from "@/axios";
 import { useToast } from "primevue/usetoast";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+import routeLocations from "@/service/VehicleCounterRouters";
 
 const toast = useToast();
 
@@ -67,7 +71,25 @@ const hoursToPredict = ref(7);
 const chartData = ref();
 const chartOptions = ref();
 
+let map = null;
+const mapContainer = ref(null);
+const markers = [];
+
 onMounted(() => {
+  mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+
+  map = new mapboxgl.Map({
+    accessToken: import.meta.env.VITE_MAPBOX_TOKEN,
+    container: mapContainer.value,
+    style: 'mapbox://styles/mapbox/standard',
+    center: [15.045314, 46.150356],
+    zoom: 10
+  });
+
+  redirectToCoordinatesAndZoomOut(15.045314, 46.150356, 7);
+
+  loadRouteMarkers();
+
   const currentDate = new Date();
   currentDate.setHours(currentDate.getHours() + 1);
   predictionsDate.value = currentDate.toLocaleDateString() + ' ' + currentDate.toLocaleTimeString();
@@ -75,6 +97,44 @@ onMounted(() => {
   loadRoutes()
   chartOptions.value = setChartOptions();
 })
+
+const redirectToCoordinatesAndZoomOut = (longitude, latitude, zoomLevel) => {
+  map.flyTo({
+    center: [longitude, latitude],
+    zoom: zoomLevel,
+    essential: true
+  });
+}
+
+const getMarkerPopup = (route) => {
+  return new mapboxgl.Popup({offset: 25}).setHTML(`<h3>${route.name}</h3><p>${new Date().toLocaleTimeString()}</p>`);
+}
+
+const loadRouteMarkers = async () => {
+  try {
+    routeLocations.forEach(route => {
+      const marker = new mapboxgl.Marker({ color: '#45a7e1' })
+          .setLngLat([route.longitude, route.latitude])
+          .setPopup(getMarkerPopup(route))
+          .addTo(map);
+
+      marker.getElement().addEventListener('click', async () => {
+        for (const r of routes.value) {
+          if (r.value.includes(route.name)) {
+            selectedRoute.value = r;
+            loadVehicleCountPredictions();
+            break;
+          }
+        }
+      });
+
+      markers.push(marker);
+    });
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Something went wrong...', life: 3000 });
+    console.error(error);
+  }
+}
 
 const loadRoutes = async () => {
   loading.value = true
@@ -261,7 +321,7 @@ const setChartOptions = () => {
   };
 };
 </script>
-<style>
+<style scoped>
 .chart-wrapper {
   position: relative;
 }
@@ -284,4 +344,21 @@ const setChartOptions = () => {
 .centered-input-number .p-inputnumber-input {
   text-align: center;
 }
+
+.map-container {
+ height: 24rem;
+ width: 100%;
+ border-radius: 24px;
+ overflow: hidden;
+}
+
+.travel-time {
+  background-color: white;
+  border-radius: 5px;
+  padding: 2px 5px;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+}
+
 </style>

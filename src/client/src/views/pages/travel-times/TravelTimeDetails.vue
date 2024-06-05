@@ -11,6 +11,9 @@
         <span class="pi pi-minus" />
       </template>
     </InputNumber>
+    <br>
+    <br>
+    <div ref="mapContainer" class="map-container"></div>
   </div>
   <div class="card">
     <div class="chart-wrapper">
@@ -38,6 +41,9 @@ import { onMounted, ref, toRefs } from 'vue';
 import { useRoute } from 'vue-router';
 import { useToast } from "primevue/usetoast";
 import axios from "@/axios";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+import routeLocations from "@/service/TravelTimeRoutes";
 
 const route = useRoute();
 const toast = useToast();
@@ -51,7 +57,20 @@ const loading = ref(false);
 const travelTimes = ref([]);
 const hoursToPredict = ref(7);
 
+let map = null;
+const mapContainer = ref(null);
+
 onMounted(() => {
+  mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+
+  map = new mapboxgl.Map({
+    accessToken: import.meta.env.VITE_MAPBOX_TOKEN,
+    container: mapContainer.value,
+    style: 'mapbox://styles/mapbox/standard',
+    center: [15.045314, 46.150356],
+    zoom: 7
+  });
+
   chartOptions.value = setChartOptions();
   fetchPredictions(locationName.value, hoursToPredict.value);
 });
@@ -81,6 +100,9 @@ const fetchPredictions = async (locationName, hours) => {
 
     travelTimes.value = predictions
     chartData.value = setChartData('Travel Time in Minutes', travelTimes.value.map(prediction => prediction.datetime), travelTimes.value.map(prediction => prediction.minutes))
+
+    const lastPrediction = travelTimes.value[travelTimes.value.length - 1];
+    drawRoute(lastPrediction.destination, lastPrediction.minutes);
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Oops', detail: 'Something went wrong...', life: 3000 })
   } finally {
@@ -149,8 +171,52 @@ const setChartOptions = () => {
     }
   };
 };
+
+const drawRoute = async (routeName, minutes) => {
+    const index = routeLocations.findIndex(r => r.name === routeName);
+    const r = routeLocations[index];
+    const start = [r.start.longitude, r.start.latitude]
+    const end = [r.end.longitude, r.end.latitude]
+
+    const query = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${start[0]},${start[1]};${end[0]},${end[1]}?geometries=geojson&access_token=${mapboxgl.accessToken}`, { method: 'GET' });
+    const json = await query.json();
+    const data = json.routes[0];
+    const route = data.geometry.coordinates;
+
+    map.addLayer({
+      id: `route-${index}`,
+      type: 'line',
+      source: {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: route
+          }
+        }
+      },
+      layout: {
+        'line-join': 'round',
+        'line-cap': 'round'
+      },
+      paint: {
+        'line-color': '#40bae6',
+        'line-width': 5
+      }
+    });
+
+    const midpointIndex = Math.floor(route.length / 2);
+    const midpoint = route[midpointIndex];
+
+    new mapboxgl.Popup({ closeOnClick: false, closeButton: false })
+        .setLngLat(midpoint)
+        .setHTML(`<div class="travel-time">${minutes} min</div>`)
+        .addTo(map);
+}
 </script>
-<style>
+<style scoped>
 .chart-wrapper {
   position: relative;
 }
@@ -171,6 +237,22 @@ const setChartOptions = () => {
 }
 
 .centered-input-number .p-inputnumber-input {
+  text-align: center;
+}
+
+.map-container {
+ height: 24rem;
+ width: 100%;
+ border-radius: 24px;
+ overflow: hidden;
+}
+
+.travel-time {
+  background-color: white;
+  border-radius: 5px;
+  padding: 2px 5px;
+  font-size: 12px;
+  font-weight: bold;
   text-align: center;
 }
 </style>
