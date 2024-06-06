@@ -40,6 +40,8 @@ Model info
 ![](screenshots/model_info.png)
 
 ## How to Run
+First you need to connect your repository to DashHub, where there is integrated DVC versioning and Mlflow. You also need to create MongoDB database.
+
 Prediction API (Python FastAPI)
 ```python
 cd src/serve
