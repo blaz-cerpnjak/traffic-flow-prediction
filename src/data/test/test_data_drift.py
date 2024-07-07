@@ -38,7 +38,7 @@ def test_travel_time_data_drift():
         os.makedirs(report_dir)
 
     report_path = os.path.join(report_dir, 'travel_time_data_drift_report.html')
-    report.save(report_path)
+    report.save_html(report_path)
 
     with open(report_path, 'r') as file:
         html_content = file.read()
