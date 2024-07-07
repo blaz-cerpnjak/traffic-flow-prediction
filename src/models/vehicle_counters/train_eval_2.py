@@ -26,7 +26,6 @@ from dotenv import load_dotenv
 from mlflow.tracking import MlflowClient
 from onnxruntime.quantization import quantize_dynamic, QuantType
 import onnxoptimizer
-import glob
 
 PROCESSED_DATA_DIR = '../../../data/vehicle_counters/processed'
 REPORTS_DIR = '../../../reports/vehicle_counters'
@@ -111,7 +110,7 @@ def train_and_evaluate(train_df, test_df, location_name, direction, model_name):
     # Create and train the model
     model = create_gru_model(input_shape)
     early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-    history = model.fit(X_train, y_train, epochs=100, validation_split=0.2, verbose=1, callbacks=[early_stopping])
+    history = model.fit(X_train, y_train, epochs=3, validation_split=0.2, verbose=1, callbacks=[early_stopping])
 
     os.makedirs(f'{REPORTS_DIR}/{location_name}/{direction}', exist_ok=True)
     os.makedirs(f'{REPORTS_DIR}/{location_name}/{direction}/figures', exist_ok=True)
