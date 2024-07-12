@@ -2,8 +2,8 @@ name: Fetch Travel Times & Weather Data
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 * * * *' # every hour
+  # schedule:
+  #  - cron: '0 * * * *' # every hour
 
 jobs:
   fetch_raw_mbajk_data:
