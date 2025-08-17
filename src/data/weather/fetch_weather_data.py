@@ -60,37 +60,37 @@ def fetch_weather_data(datetime, latitude, longitude):
 if __name__ == "__main__":
     type = sys.argv[1]
 
-    if type == "travel-times":
-        base_dir = 'data/travel_times/raw'
-        location_names = [folder for folder in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, folder))]
+    # if type == "travel-times":
+    #     base_dir = 'data/travel_times/raw'
+    #     location_names = [folder for folder in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, folder))]
         
-        for location_name in location_names:
-            path = f"data/travel_times/raw/{location_name}" 
-            if not os.path.exists(path):
-                os.makedirs(path)
+    #     for location_name in location_names:
+    #         path = f"data/travel_times/raw/{location_name}" 
+    #         if not os.path.exists(path):
+    #             os.makedirs(path)
 
-            df = pd.read_csv(f'{base_dir}/{location_name}/travel_time_data.csv')
-            last_row = df.iloc[-1]
-            datetime_utc = pd.to_datetime(last_row['datetime'])
-            weather_data = fetch_weather_data(datetime_utc, last_row['latitude'], last_row['longitude'])
+    #         df = pd.read_csv(f'{base_dir}/{location_name}/travel_time_data.csv')
+    #         last_row = df.iloc[-1]
+    #         datetime_utc = pd.to_datetime(last_row['datetime'])
+    #         weather_data = fetch_weather_data(datetime_utc, last_row['latitude'], last_row['longitude'])
             
-            save_weather_data_to_csv(datetime_utc, last_row['latitude'], last_row['longitude'], path, weather_data)
+    #         save_weather_data_to_csv(datetime_utc, last_row['latitude'], last_row['longitude'], path, weather_data)
 
-    elif type == "vehicle-counters":
-        base_dir = 'data/vehicle_counters/raw'
+    # elif type == "vehicle-counters":
+    #     base_dir = 'data/vehicle_counters/raw'
 
-        for dirpath, dirnames, filenames in os.walk(base_dir):
-            if dirpath == base_dir:
-                continue
+    #     for dirpath, dirnames, filenames in os.walk(base_dir):
+    #         if dirpath == base_dir:
+    #             continue
 
-            for dirname in dirnames:
-                path = f"{dirpath}/{dirname}"
-                if not os.path.exists(path):
-                    os.makedirs(path)
+    #         for dirname in dirnames:
+    #             path = f"{dirpath}/{dirname}"
+    #             if not os.path.exists(path):
+    #                 os.makedirs(path)
 
-                df = pd.read_csv(f'{path}/counters_data.csv')
-                last_row = df.iloc[-1]
-                datetime_utc = pd.to_datetime(last_row['datetime'])
-                weather_data = fetch_weather_data(datetime_utc, last_row['latitude'], last_row['longitude'])
+    #             df = pd.read_csv(f'{path}/counters_data.csv')
+    #             last_row = df.iloc[-1]
+    #             datetime_utc = pd.to_datetime(last_row['datetime'])
+    #             weather_data = fetch_weather_data(datetime_utc, last_row['latitude'], last_row['longitude'])
 
-                save_weather_data_to_csv(datetime_utc, last_row['latitude'], last_row['longitude'], path, weather_data)
+    #             save_weather_data_to_csv(datetime_utc, last_row['latitude'], last_row['longitude'], path, weather_data)
