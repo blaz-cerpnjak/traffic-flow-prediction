@@ -6,7 +6,7 @@ on:
     - cron: '*/30 * * * *' # every 30 min
 
 jobs:
-  fetch_raw_mbajk_data:
+  fetch_raw_travel_times_data:
     runs-on: ubuntu-latest
 
     outputs:
