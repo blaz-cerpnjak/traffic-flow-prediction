@@ -52,8 +52,8 @@ jobs:
       - name: Scrape vehicle counters data
         run: python src/data/scrapers/vehicle_counters_scraper.py
 
-      - name: Fetch weather data for vehicle counters
-        run: python src/data/weather/fetch_weather_data.py vehicle-counters
+      # - name: Fetch weather data for vehicle counters
+      #  run: python src/data/weather/fetch_weather_data.py vehicle-counters
 
       - name: Process travel times data
         run: python src/data/process_travel_time_data.py
