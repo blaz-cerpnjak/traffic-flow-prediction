@@ -46,8 +46,8 @@ jobs:
           cd src/data/scrapers
           python travel_time_scraper.py
 
-      - name: Fetch weather data for travel times
-        run: python src/data/weather/fetch_weather_data.py travel-times
+      #- name: Fetch weather data for travel times
+      #  run: python src/data/weather/fetch_weather_data.py travel-times
 
       - name: Scrape vehicle counters data
         run: python src/data/scrapers/vehicle_counters_scraper.py
