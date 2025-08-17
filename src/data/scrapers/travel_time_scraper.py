@@ -137,6 +137,11 @@ def scrape_travel_times():
         print(f"Location: {location_name}. Time: {time}. Trimmed: {trim_text(location_name)}. Min: {convert_to_minutes(time)}")
 
         trimmed_location_name = trim_text(location_name)
+
+        if trimmed_location_name not in LOCATIONS:
+            print(f"Skipping unknown location: {trimmed_location_name}")
+            continue 
+        
         location = LOCATIONS[trimmed_location_name]
 
         travel_times[trimmed_location_name] = {
