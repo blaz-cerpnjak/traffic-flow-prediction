@@ -42,7 +42,7 @@ def fetch_weather_data(datetime, latitude, longitude):
 
     url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&start_date={date_formatted}&end_date={date_formatted}&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,precipitation,precipitation_probability,rain,surface_pressure,wind_speed_10m,apparent_temperature&timezone=GMT"
   
-    json_data = requests.get(url).json()
+    json_data = requests.get(url, timeout=10).json() # Wait max. 10s
 
     data = {
         'temperature': get_item_by_hour(json_data, date_formatted, 'temperature_2m', time.hour),
