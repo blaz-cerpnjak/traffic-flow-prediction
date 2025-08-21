@@ -2,8 +2,8 @@ name: Fetch Travel Times & Weather Data
 
 on:
   workflow_dispatch:
-  #schedule:
-    #- cron: '*/30 * * * *' # every 30 min
+  schedule:
+    - cron: '*/30 * * * *' # every 30 min
 
 jobs:
   fetch_raw_travel_times_data:
